@@ -1,0 +1,39 @@
+---
+title: "README"
+format: pdf
+author: "JUAN ELIAS LARA SOTO"
+---
+
+# Funciones de Log-Verosimilitud en R
+
+Este repositorio contiene funciones en R para calcular la log-verosimilitud de distintas distribuciones clásicas:
+
+-   Normal
+-   Exponencial
+-   Uniforme
+-   Bernoulli
+-   Binomial
+-   Poisson
+-   Geométrica
+-   Gamma
+-   Beta
+-   Chi-cuadrado
+
+Cada función está pensada para ser simple, directa y eficiente, ideal para cursos de inferencia estadística o para el ajuste de modelos mediante el método de Máxima Verosimilitud (MLE).
+
+------------------------------------------------------------------------
+
+# Contenido
+
+-   Implementaciones de funciones de log-verosimilitud en R.
+-   Pruebas unitarias automáticas usando `testthat`.
+-   Ejemplos de simulaciones y comparaciones de modelos mediante log-verosimilitudes.
+-   Documentación sencilla en formato Quarto (`.qmd`).
+
+------------------------------------------------------------------------
+
+# Uso básico
+
+**Simulamos datos de una normal:**
+
+x \<- rnorm(30, mean = 10, sd = 3)

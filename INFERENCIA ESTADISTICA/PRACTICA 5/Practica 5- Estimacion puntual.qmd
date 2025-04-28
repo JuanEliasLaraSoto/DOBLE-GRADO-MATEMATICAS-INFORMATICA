@@ -1,0 +1,330 @@
+---
+title: "Práctica 5. Estimación Puntual"
+subtitle: "Inferencia Estadística 2024-2025"
+author: "JUAN ELIAS LARA SOTO"
+format: pdf
+---
+
+\vspace{-2cm}
+
+Cargue el archivo PRACTICA5.RDS disponible en Campus Virtual usando el siguiente código:
+
+```{r, eval = FALSE}
+datos <- readRDS("PRACTICA5.RDS")
+
+
+```
+
+## Ejercicio 1
+
+Argumente qué distribución o distribuciones de probabilidad podrían haber generado las diez muestras que aparecen como columnas en el \texttt{data.frame} nombrado *datos*. **(Ver anexo)**.
+
+```{r}
+datos <- read.csv("datos_practica5.csv")
+
+library(ggplot2)
+library(dplyr)
+library(MASS)
+
+# Función general mejorada
+graficar_variable <- function(x, nombre, tipo, params = list()) {
+  df <- data.frame(x = x)
+  
+  if (tipo == "discreta") {
+    x_vals <- if (!is.null(params$valores_posibles)) {
+      params$valores_posibles
+    } else {
+      sort(unique(x))
+    }
+
+    tabla_emp <- as.data.frame(table(factor(x, levels = x_vals)))
+    colnames(tabla_emp) <- c("x", "Frecuencia")
+    tabla_emp$Tipo <- "Empírica"
+
+    if (!is.null(params$dist)) {
+      if (params$dist == "binom") {
+        probs <- dbinom(as.numeric(as.character(x_vals)), size = params$n, prob = params$p)
+      } else if (params$dist == "pois") {
+        probs <- dpois(as.numeric(as.character(x_vals)), lambda = params$lambda)
+      }
+      freqs <- probs * length(x)
+      tabla_teo <- data.frame(x = factor(x_vals, levels = x_vals), Frecuencia = freqs, Tipo = "Teórica")
+      tabla_plot <- rbind(tabla_emp, tabla_teo)
+
+      p <- ggplot(tabla_plot, aes(x = x, y = Frecuencia, fill = Tipo)) +
+        geom_bar(stat = "identity", position = "dodge", alpha = 0.8) +
+        scale_fill_manual(values = c("Empírica" = "skyblue", "Teórica" = "red")) +
+        labs(title = paste("Histograma de", nombre), x = nombre, y = "Frecuencia", fill = "Leyenda")
+    } else {
+      p <- ggplot(tabla_emp, aes(x = x, y = Frecuencia)) +
+        geom_bar(stat = "identity", fill = "skyblue", alpha = 0.8) +
+        labs(title = paste("Histograma de", nombre), x = nombre, y = "Frecuencia")
+    }
+
+  } else if (tipo == "continua") {
+    p <- ggplot(df, aes(x = x)) +
+      geom_density(color = "blue", fill = "skyblue", alpha = 0.4, linewidth = 1) +
+      labs(title = paste("Densidad de", nombre), x = nombre, y = "Densidad")
+
+    if (!is.null(params$dist)) {
+      if (params$dist == "unif") {
+        # Corrección específica para distribución uniforme
+        x_teo <- seq(params$min, params$max, length.out = 200)
+        y_teo <- dunif(x_teo, min = params$min, max = params$max)
+        df_teo <- data.frame(x = x_teo, y = y_teo)
+
+        p <- p +
+          geom_line(data = df_teo, aes(x = x, y = y), color = "red", linewidth = 1) +
+          annotate("text", x = params$max, y = max(y_teo),
+                   label = "Rojo: Teórica\nAzul: Empírica",
+                   hjust = 1.1, vjust = 2, size = 3.5, color = "black") +
+          coord_cartesian(xlim = c(params$min - 0.5, params$max + 0.5))
+      } else {
+        # Otras continuas: normal, exp, gamma
+        x_teo <- seq(min(x), max(x), length.out = 200)
+        if (params$dist == "norm") {
+          y_teo <- dnorm(x_teo, mean = params$mean, sd = params$sd)
+        } else if (params$dist == "exp") {
+          y_teo <- dexp(x_teo, rate = params$lambda)
+        } else if (params$dist == "gamma") {
+          y_teo <- dgamma(x_teo, shape = params$shape, rate = params$rate)
+        }
+        df_teo <- data.frame(x = x_teo, y = y_teo)
+
+        p <- p +
+          geom_line(data = df_teo, aes(x = x, y = y), color = "red", linewidth = 1) +
+          annotate("text", x = Inf, y = Inf,
+                   label = "Rojo: Teórica\nAzul: Empírica",
+                   hjust = 1.1, vjust = 2, size = 3.5, color = "black")
+      }
+    }
+  }
+
+  print(p)
+}
+
+### Graficar todas
+
+# X_1: Bernoulli
+p1 <- mean(datos$X_1)
+graficar_variable(datos$X_1, "X_1", tipo = "discreta", params = list(dist = "binom", n = 1, p = p1, valores_posibles = 0:1))
+
+# X_2: Poisson
+graficar_variable(datos$X_2, "X_2", tipo = "discreta", params = list(dist = "pois", lambda = mean(datos$X_2)))
+
+# X_3: Binomial
+n3 <- max(datos$X_3)
+p3 <- mean(datos$X_3) / n3
+graficar_variable(datos$X_3, "X_3", tipo = "discreta", params = list(dist = "binom", n = n3, p = p3))
+
+# X_4: Normal
+graficar_variable(datos$X_4, "X_4", tipo = "continua", params = list(dist = "norm", mean = mean(datos$X_4), sd = sd(datos$X_4)))
+
+# X_5: Exponencial
+graficar_variable(datos$X_5, "X_5", tipo = "continua", params = list(dist = "exp", lambda = 1 / mean(datos$X_5)))
+
+# X_6: Gamma
+ajuste_gamma <- fitdistr(datos$X_6, "gamma")
+graficar_variable(datos$X_6, "X_6", tipo = "continua", params = list(dist = "gamma", shape = ajuste_gamma$estimate["shape"], rate = ajuste_gamma$estimate["rate"]))
+
+# X_8: Uniforme
+graficar_variable(datos$X_8, "X_8", tipo = "continua", params = list(dist = "unif", min = min(datos$X_8), max = max(datos$X_8)))
+
+# X_9: Normal
+graficar_variable(datos$X_9, "X_9", tipo = "continua", params = list(dist = "norm", mean = mean(datos$X_9), sd = sd(datos$X_9)))
+
+# X_10: Binomial contaminada (filtramos negativos)
+x10 <- datos$X_10[datos$X_10 >= 0]
+n10 <- max(x10)
+p10 <- mean(x10) / n10
+graficar_variable(x10, "X_10 (filtrado)", tipo = "discreta", params = list(dist = "binom", n = n10, p = p10))
+
+```
+
+## Ejercicio 2
+
+Sabiendo la familia paramétrica de las distribuciones que generaron los datos, proponga *intuitivamente* algún estimador $T$ (función de la muestra) para aproximar los parámetros de las distribuciones de $X_2$, $X_3$, $X_4$, $X_6$, $X_8$, $X_9$ y $X_{10}$
+
+## 
+
+A continuación, proponemos estimadores $T$ para los parámetros de las siguientes variables, asumiendo conocidas sus distribuciones.
+
+------------------------------------------------------------------------
+
+### $X_2 \sim \text{Poisson}(\lambda)$
+
+-   **Parámetro:** $\lambda$\
+-   **Propiedad:** $\mathbb{E}[X] = \lambda$\
+-   **Estimador:**
+
+$$
+\hat{\lambda} = \bar{X}_2 = \frac{1}{n} \sum_{i=1}^{n} X_{2i}
+$$
+
+------------------------------------------------------------------------
+
+### $X_3 \sim \text{Binomial}(n, p)$
+
+-   **Parámetro:** $p$, suponiendo $n$ conocido\
+-   **Propiedad:** $\mathbb{E}[X] = np$\
+-   **Estimador:**
+
+$$
+\hat{p} = \frac{\bar{X}_3}{n}
+$$
+
+------------------------------------------------------------------------
+
+### $X_4 \sim \mathcal{N}(\mu, \sigma^2)$
+
+-   **Parámetros:** $\mu$, $\sigma^2$\
+-   **Estimadores:**
+
+$$
+\hat{\mu} = \bar{X}_4, \quad
+\hat{\sigma}^2 = \frac{1}{n} \sum_{i=1}^{n} (X_{4i} - \bar{X}_4)^2
+$$
+
+------------------------------------------------------------------------
+
+### $X_6 \sim \text{Gamma}(\alpha, \lambda)$
+
+-   **Parámetros:** $\alpha$, $\lambda$\
+-   **Propiedades:**
+
+$$
+\mathbb{E}[X] = \frac{\alpha}{\lambda}, \quad
+\text{Var}(X) = \frac{\alpha}{\lambda^2}
+$$
+
+-   **Estimadores:**
+
+$$
+\hat{\lambda} = \frac{\bar{X}_6}{s^2}, \quad
+\hat{\alpha} = \frac{\bar{X}_6^2}{s^2}
+$$
+
+------------------------------------------------------------------------
+
+### $X_8 \sim \mathcal{U}(a, b)$
+
+-   **Parámetros:** $a$, $b$\
+-   **Estimadores:**
+
+$$
+\hat{a} = \min(X_8), \quad
+\hat{b} = \max(X_8)
+$$
+
+------------------------------------------------------------------------
+
+### $X_9 \sim \mathcal{N}(\mu, \sigma^2)$
+
+-   **Igual que en** $X_4$:
+
+$$
+\hat{\mu} = \bar{X}_9, \quad
+\hat{\sigma}^2 = \frac{1}{n} \sum_{i=1}^{n} (X_{9i} - \bar{X}_9)^2
+$$
+
+------------------------------------------------------------------------
+
+### $X_{10} \sim \text{Binomial}(n, p)$
+
+-   **Con valores negativos filtrados**\
+-   **Se estima:** $n = \max(X_{10})$\
+-   **Estimador:**
+
+$$
+\hat{p} = \frac{\bar{X}_{10}}{n}
+$$
+
+## Ejercicio 3
+
+La variables $X_7$ y $X_4$ están relacionadas como sigue:
+
+$$X_7 = \beta_0 + \beta_1 X_4 + \epsilon,$$
+
+siendo $\beta_0, \beta_1 \in \mathbb{R}$ parámetros y $\epsilon \sim N(0, \sigma^2)$.
+
+Proponga una estimación para los parámetros.
+
+```{r}
+datos <- read.csv("datos_practica5.csv")
+
+library(ggplot2)
+
+# Crear gráfico de dispersión + recta de regresión lineal
+ggplot(datos, aes(x = X_4, y = X_7)) +
+  geom_point(color = "steelblue", alpha = 0.6, size = 2) +  # nube de puntos
+  geom_smooth(method = "lm", color = "red", se = FALSE) +   # recta de regresión
+  labs(
+    title = "Relación entre X_4 y X_7",
+    x = "X_4 ",
+    y = "X_7 "
+  ) +
+  theme_minimal()
+
+```
+
+### **Propuesta de estimación:**
+
+### Estimación de los parámetros
+
+Para estimar los valores de $\beta_0$ y $\beta_1$ se puede utilizar una **regresión lineal simple**, que es una técnica estadística que permite encontrar la recta que mejor se ajusta a los datos observados de $X_4$ y $X_7$.
+
+Esta recta representa la relación entre ambas variables y se construye de forma que el error total sea el menor posible.
+
+La regresión nos proporciona:
+
+-   **El intercepto** ($\hat{\beta}_0$): el valor aproximado de $X_7$ cuando $X_4 = 0$.
+-   **La pendiente** ($\hat{\beta}_1$): cuánto cambia $X_7$ cuando $X_4$ aumenta una unidad.
+
+Si la pendiente es distinta de cero, eso indica que **sí existe una relación lineal entre** $X_4$ y $X_7$.
+
+En resumen, una buena forma de estimar estos parámetros es ajustar un modelo de regresión lineal simple que nos diga cómo se comporta $X_7$ en función de $X_4$.
+
+# Anexo
+
+Los datos han sido generados con distribución base:
+
+-   $X_1 \sim Binomial(n, p)$
+
+-   $X_2 \sim Poisson(\lambda)$
+
+-   $X_3 \sim Binomial(n, p)$
+
+-   $X_4 \sim Normal(\mu, \sigma)$
+
+-   $X_5 \sim Exponencial (\lambda)$
+
+-   $X_6 \sim Gamma(\alpha, \lambda)$
+
+-   $X_8 \sim Uniforme(a, b)$
+
+-   $X_9\sim Normal (\mu, \sigma)$
+
+-   $X_{10} \sim Binomial(n, p)$.
+
+## Algunas muestras están contaminadas con datos generados fuera de su distribución base.
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
