@@ -1,0 +1,52 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{enumitem}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\title{Preguntas tipo test sobre la reducción de 3-SAT a 3-COLOR}
+\author{Juan Elias Lara Soto \\ Doble Grado en Matemáticas e Ingeniería Informática}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Preguntas tipo test sobre la reducción de 3-SAT a 3-COLOR}
+
+\section*{Pregunta 1}
+
+\textbf{¿Cómo se representa una variable negada (¬x) en el grafo construido a partir de una fórmula 3-CNF?}
+
+\begin{enumerate}[label=\Alph*)]
+    \item Conectando el nodo + del gadget de variable al OR-gadget
+    \item Asignándole el mismo color que el nodo M
+    \item Conectando el nodo -- del gadget de variable al OR-gadget% Respuesta correcta
+    \item Usando un gadget de cláusula adicional
+\end{enumerate}
+
+\section*{Pregunta 2}
+
+\textbf{¿Cómo se asegura la correspondencia entre la satisfacibilidad de una fórmula y la 3-colorabilidad del grafo construido?}
+
+\begin{enumerate}[label=\Alph*)]
+    \item Cada cláusula se convierte en un triángulo coloreable
+    \item El gadget OR permite que al menos una entrada tenga color T si la cláusula es verdadera} % Respuesta correcta
+    \item Los colores se asignan al azar para simular todas las asignaciones
+    \item Si el grafo tiene ciclos, entonces la fórmula no es satisfacible
+\end{enumerate}
+
+\section*{Pregunta 3}
+
+\textbf{¿Qué ocurre si una fórmula booleana es insatisfacible al aplicar la reducción a 3-COLOR?}
+
+\begin{enumerate}[label=\Alph*)]
+    \item El grafo resultante no tiene aristas
+    \item La construcción del gadget falla
+    \item No existe una 3-coloración válida para el grafo % Respuesta correcta
+    \item El grafo se vuelve completamente conexo
+\end{enumerate}
+
+\end{document}
