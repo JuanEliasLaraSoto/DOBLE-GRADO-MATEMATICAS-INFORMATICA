@@ -43,7 +43,9 @@
 \section*{Índice}
 \vspace{1em}
 
+
 \begin{enumerate}
+  \item \textbf{Introducción}
   \item \textbf{Definición del problema como lenguaje}
   \begin{enumerate}
     \item[1.1)] Ejemplo válido
@@ -87,6 +89,17 @@
 
 
 
+\section{Introducción}
+
+Los problemas de decisión en teoría de la complejidad computacional constituyen uno de los pilares fundamentales para entender los límites de la computación eficiente. Entre ellos, destaca de forma especial la clase de problemas denominados \textbf{NP-completos}, cuya resolución en tiempo polinómico implicaría resolver eficientemente toda la clase NP.
+
+En este trabajo nos centraremos en uno de estos problemas emblemáticos: \textbf{k-COLOR}, cuya formulación general consiste en decidir si es posible colorear los vértices de un grafo dado utilizando a lo sumo $k$ colores, de forma que ningún par de vértices adyacentes comparta el mismo color. Esta tarea, que en apariencia puede parecer simple, encierra una complejidad computacional considerable, especialmente para valores de $k \geq 3$.
+
+El interés por este problema no es meramente teórico. La coloración de grafos tiene múltiples aplicaciones prácticas: desde la planificación de horarios y la asignación de frecuencias en redes inalámbricas, hasta el diseño de circuitos electrónicos y la programación de tareas en sistemas operativos.
+
+El objetivo principal de este documento es demostrar que el problema \textbf{k-COLOR es NP-completo para todo $k \geq 3$}, partiendo de la demostración de la NP-completitud de \textbf{3-COLOR} mediante una reducción desde el conocido problema \textbf{3-SAT}, utilizando construcciones auxiliares llamadas \emph{gadgets}. Posteriormente, generalizaremos la demostración para valores arbitrarios de $k$.
+
+Para garantizar el rigor formal, se seguirá el esquema clásico de prueba de NP-completitud: definición formal del lenguaje, demostración de pertenencia a NP, construcción de una reducción polinómica desde un problema NP-completo conocido (3-SAT) y análisis detallado de la doble implicación lógica entre ambas formulaciones.
 
 
 
