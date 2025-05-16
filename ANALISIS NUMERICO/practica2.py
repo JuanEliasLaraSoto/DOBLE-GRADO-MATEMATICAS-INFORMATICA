@@ -1,4 +1,3 @@
-
 from pylab import *
 from time import perf_counter
 
@@ -283,8 +282,9 @@ legend(leyenda)
 
 ######################EJERCICIO 2 B) ###############
 
-def AM3_generico(a, b, fun, N, y0,eps,nmax):
-    
+def AM3_generico(a, b, fun, N, y0):
+    tol=1.e-12
+    nmax=200
     y = zeros(N+1)
     t = zeros(N+1)
     f = zeros(N+1)
@@ -302,19 +302,20 @@ def AM3_generico(a, b, fun, N, y0,eps,nmax):
         y[k+1] = y[k] + h/6*(k1 + 2*k2 + 2*k3 + k4)
         f[k+1] = fun(t[k+1], y[k+1])
     for k in range(2, N):
+        Ck = y[k] + h/24*(19*f[k] - 5*f[k-1] + f[k-2])#ojo con tk
         t[k+1] = t[k] + h
-        Ck = y[k] + h/24*(19*f[k] - 5*f[k-1] + f[k-2])
-        error = eps + 1
-        iter = 0
+        dist = tol + 1
+        count = 0
         z = y[k]
-        while(error >= eps and iter < nmax):
+        while(dist >tol and count < nmax):
             znew = 9/24*h*fun(t[k+1], z) + Ck
-            error = abs(z - znew)
+            dist = abs(z - znew)
+            count += 1
             z = znew
-            iter += 1
-        if iter == nmax:
+
+        if count == nmax:
             print('El método de punto fijo no ha convergido')
-        maxiter = max(maxiter, iter)
+        maxiter = max(maxiter, count)
         y[k+1] = z
         f[k+1] = fun(t[k+1], y[k+1])
     return (t, y, maxiter)
@@ -325,15 +326,15 @@ a = 0.0
 b = 5.0
 malla=[10,20,40,80,160]
 
+figure()
 
 for N in malla:
     tini = perf_counter()
 
-    (t, y, maxiter) = AM3_generico(a, b, fun, N, y0,1.e-12,200)
+    (t, y, maxiter) = AM3_generico(a, b, fun, N, y0)
     
     
     tfin = perf_counter()
-    
     plot(t, y, "-*")
     
     h=(b-a)/float(N)
@@ -355,7 +356,6 @@ for N in malla:
     if N > malla[0]:
         order=(log(errorold)-log(error))/log(2)
         print('orden aprox ' +str(order))
-        
     print('---------------------')
     errorold=error
     
@@ -368,3 +368,156 @@ legend(leyenda)
 
 # el número máximo de iteraciones va decreciendo porque la semilla mejora cuando el paso de malla se hace pequeño
 
+######################EJERCICIO 2 C) ###############
+
+
+def AM3_Newton(a, b, fun, N, y0):
+    tol=1.e-12
+    nmax=200
+    y = zeros(N+1)
+    t = zeros(N+1)
+    f = zeros(N+1)
+    h = (b - a)/float(N) 
+    t[0] = a
+    y[0] = y0
+    f[0] = fun(a, y[0])
+    maxiter = 0
+    for k in range(2):#usamos rk4 pq el orden de am3 es 4
+        t[k+1] = t[k] + h
+        k1 = fun(t[k], y[k])
+        k2 = fun(t[k] + h/2, y[k] + h/2*k1)
+        k3 = fun(t[k] + h/2, y[k] + h/2*k2)
+        k4 = fun(t[k+1], y[k] + h*k3)
+        y[k+1] = y[k] + h/6*(k1 + 2*k2 + 2*k3 + k4)
+        f[k+1] = fun(t[k+1], y[k+1])
+    for k in range(2, N):
+        t[k+1] = t[k] + h
+        Ck = y[k] + h/24*(19*f[k] - 5*f[k-1] + f[k-2])#ojo con tk, siempre ponerlo primero mejor
+        dist = tol + 1
+        count = 0
+        z = y[k]
+        while(dist >tol and count < nmax):
+            F = z - 9*h/24*fun(t[k+1], z) - Ck # al escribir 9*24/h y 9*h/24 pueden obtenerse resultados ligeramente distintos
+            dF = 1 - 9*h/24*dyfun(t[k+1], z)
+            znew = z - F/dF
+            dist = abs(z - znew)
+            count += 1
+            z = znew
+
+        if count == nmax:
+            print('El método de punto fijo no ha convergido')
+        maxiter = max(maxiter, count)
+        y[k+1] = z
+        f[k+1] = fun(t[k+1], y[k+1])
+    return (t, y, maxiter)
+
+
+def dyfun(t, y): # derivada parcial de f(t,y) = -y + e^{-t}cos(t) con respecto a y
+    return -1
+
+#dos ite en 0,01
+y0 = 0.0
+a = 0.0
+b = 5.0
+malla=[10,20,40,80,160]
+
+figure()
+
+for N in malla:
+    tini = perf_counter()
+
+    (t, y, maxiter) = AM3_Newton(a, b, fun, N, y0)
+    
+    
+    tfin = perf_counter()
+    plot(t, y, "-*")
+    
+    h=(b-a)/float(N)
+    
+    ye = exacta(t)
+
+    
+    # Calculo del error cometido
+    error = max(abs(y-ye))
+    tcpu=tfin-tini 
+    
+    print('N = '+str(N))
+    print('Error='+str(error))
+    print('Tiempo CPU='+str(tcpu))
+    print('Máximo número de iteraciones de punto fijo: ' + str(maxiter))
+
+    
+    
+    if N > malla[0]:
+        order=(log(errorold)-log(error))/log(2)
+        print('orden aprox ' +str(order))
+    print('---------------------')
+    errorold=error
+    
+
+plot(t,ye)
+leyenda=['N = '+str(N) for N in malla]
+leyenda.append('exacta')
+legend(leyenda)
+   
+
+# el número máximo de iteraciones va decreciendo porque la semilla mejora cuando el paso de malla se hace pequeño
+
+
+######################EJERCICIO 2  D) ###############
+
+def fun(t,y):
+    return 1+y**2;
+
+
+def exacta(t):
+    return tan(t);
+
+def dyfun(t, y): # derivada parcial de f(t,y) = -y + e^{-t}cos(t) con respecto a y
+    return 2*y
+
+#dos ite en 0,01
+y0 = 0.0
+a = 0.0
+b = 1.0
+malla=[10,20,40,80,160]
+
+figure()
+
+for N in malla:
+    tini = perf_counter()
+
+    (t, y, maxiter) = AM3_Newton(a, b, fun, N, y0)
+    
+    
+    tfin = perf_counter()
+    plot(t, y, "-*")
+    
+    h=(b-a)/float(N)
+    
+    ye = exacta(t)
+
+    
+    # Calculo del error cometido
+    error = max(abs(y-ye))
+    tcpu=tfin-tini 
+    
+    print('N = '+str(N))
+    print('Error='+str(error))
+    print('Tiempo CPU='+str(tcpu))
+    print('Máximo número de iteraciones de punto fijo: ' + str(maxiter))
+
+    
+    
+    if N > malla[0]:
+        order=(log(errorold)-log(error))/log(2)
+        print('orden aprox ' +str(order))
+    print('---------------------')
+    errorold=error
+    
+
+plot(t,ye)
+leyenda=['N = '+str(N) for N in malla]
+leyenda.append('exacta')
+legend(leyenda)
+   
