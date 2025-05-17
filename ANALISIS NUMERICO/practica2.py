@@ -415,7 +415,6 @@ def AM3_Newton(a, b, fun, N, y0):
 def dyfun(t, y): # derivada parcial de f(t,y) = -y + e^{-t}cos(t) con respecto a y
     return -1
 
-#dos ite en 0,01
 y0 = 0.0
 a = 0.0
 b = 5.0
@@ -465,59 +464,87 @@ legend(leyenda)
 
 
 ######################EJERCICIO 2  D) ###############
+print('\n\n\nEJERCICIO 2(d.i)')
 
-def fun(t,y):
+def fun2(t,y):
     return 1+y**2;
 
 
-def exacta(t):
+def exacta2(t):
     return tan(t);
 
 def dyfun(t, y): # derivada parcial de f(t,y) = -y + e^{-t}cos(t) con respecto a y
     return 2*y
 
-#dos ite en 0,01
 y0 = 0.0
 a = 0.0
 b = 1.0
-malla=[10,20,40,80,160]
+N=320
+figure('EJERCICIO 2(d.i)')
 
-figure()
+tini = perf_counter()
 
-for N in malla:
-    tini = perf_counter()
+(t, y, maxiter) = AM3_generico(a, b, fun2, N, y0)
 
-    (t, y, maxiter) = AM3_Newton(a, b, fun, N, y0)
-    
-    
-    tfin = perf_counter()
-    plot(t, y, "-*")
-    
-    h=(b-a)/float(N)
-    
-    ye = exacta(t)
 
-    
-    # Calculo del error cometido
-    error = max(abs(y-ye))
-    tcpu=tfin-tini 
-    
-    print('N = '+str(N))
-    print('Error='+str(error))
-    print('Tiempo CPU='+str(tcpu))
-    print('Máximo número de iteraciones de punto fijo: ' + str(maxiter))
+tfin = perf_counter()
+plot(t, y, "-*")
 
-    
-    
-    if N > malla[0]:
-        order=(log(errorold)-log(error))/log(2)
-        print('orden aprox ' +str(order))
-    print('---------------------')
-    errorold=error
-    
+h=(b-a)/float(N)
+
+ye = exacta2(t)
+
+
+# Calculo del error cometido
+error = max(abs(y-ye))
+tcpu=tfin-tini 
+
+print('N = '+str(N))
+print('Error='+str(error))
+print('Tiempo CPU='+str(tcpu))
+print('Máximo número de iteraciones de punto fijo: ' + str(maxiter))
+
+
 
 plot(t,ye)
-leyenda=['N = '+str(N) for N in malla]
+leyenda=['N = 320']
+leyenda.append('exacta')
+legend(leyenda)
+
+print('\n\n\nEJERCICIO 2(d.i)')
+
+y0 = 0.0
+a = 0.0
+b = 1.0
+N=320
+figure('EJERCICIO 2(d.ii)')
+
+tini = perf_counter()
+
+(t, y, maxiter) = AM3_Newton(a, b, fun2, N, y0)
+
+
+tfin = perf_counter()
+plot(t, y, "-*")
+
+h=(b-a)/float(N)
+
+ye = exacta2(t)
+
+
+# Calculo del error cometido
+error = max(abs(y-ye))
+tcpu=tfin-tini 
+
+print('N = '+str(N))
+print('Error='+str(error))
+print('Tiempo CPU='+str(tcpu))
+print('Máximo número de iteraciones de punto fijo: ' + str(maxiter))
+
+
+
+plot(t,ye)
+leyenda=['N = 320']
 leyenda.append('exacta')
 legend(leyenda)
    
