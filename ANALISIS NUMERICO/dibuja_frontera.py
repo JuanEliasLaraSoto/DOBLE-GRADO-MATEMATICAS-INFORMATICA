@@ -83,4 +83,18 @@ locfronRK(dEulerImp,1)
 
 
 
+print('-------------')
+print('Problema 2')
+print('-------------')
+
+figure('Problema 2. Region de estabilidad')
+locfronRK(dReuler,1)
+plot([-10,-10],[1,-1],'*')
+plot([-10,0],[1,0],'k--')
+plot([-10,0],[-1,0],'k--')
+hcrit=20/101
+plot([-10*hcrit,-10*hcrit],[hcrit,-hcrit],'bo')
+
+
+
 
