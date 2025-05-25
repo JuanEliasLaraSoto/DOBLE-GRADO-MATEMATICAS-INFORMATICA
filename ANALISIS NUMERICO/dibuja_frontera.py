@@ -9,7 +9,7 @@ from pylab import *
     
 
 
-def locfron(rho, sigma):
+def locfron(rho, sigma):#ME DIBUJA LA FRONTERA DE MI DA
 # Dibuja la frontera de la region de estabilidad absoluta 
 # de un metodo multipaso.
 # rho y sigma son los coeficientes de los polinomios caracteristicos
@@ -34,7 +34,7 @@ locfron(rho,sigma)
 
 
 
-def locfronRK(dR, N):
+def locfronRK(dR, N):#ME DIBUJA LA FRONTERA DE MI DA
 # Localizacion de la frontera de un metodo RK
 #  Devidada de la funcion R
     Npoints = 5000
@@ -88,7 +88,7 @@ print('Problema 2')
 print('-------------')
 
 figure('Problema 2. Region de estabilidad')
-locfronRK(dReuler,1)
+locfronRK(dREuler,1)
 plot([-10,-10],[1,-1],'*')
 plot([-10,0],[1,0],'k--')
 plot([-10,0],[-1,0],'k--')
