@@ -35,6 +35,7 @@ locfron(rho,sigma)
 
 
 def locfronRK(dR, N):#ME DIBUJA LA FRONTERA DE MI DA
+#N ES EL NUMERO DE ETAPAS DEL METODO RK
 # Localizacion de la frontera de un metodo RK
 #  Devidada de la funcion R
     Npoints = 5000
@@ -84,7 +85,7 @@ locfronRK(dEulerImp,1)
 
 
 print('-------------')
-print('Problema 2')
+print('Problema 2: EN LIBRETA TIENES EL CALCULO DE LOS AUTOVALORES')
 print('-------------')
 
 figure('Problema 2. Region de estabilidad')
