@@ -302,13 +302,13 @@ def AM3_generico(a, b, fun, N, y0):
         y[k+1] = y[k] + h/6*(k1 + 2*k2 + 2*k3 + k4)
         f[k+1] = fun(t[k+1], y[k+1])
     for k in range(2, N):
-        Ck = y[k] + h/24*(19*f[k] - 5*f[k-1] + f[k-2])#ojo con tk
+        Ck = y[k] + h/24*(19*f[k] - 5*f[k-1] + f[k-2])#ojo con tk, el p fijo se aplica a lo ostro q tiene el yk+1
         t[k+1] = t[k] + h
-        dist = tol + 1
+        dist = tol + 1#para q entre
         count = 0
         z = y[k]
         while(dist >tol and count < nmax):
-            znew = 9/24*h*fun(t[k+1], z) + Ck
+            znew = 9/24*h*fun(t[k+1], z) + Ck 
             dist = abs(z - znew)
             count += 1
             z = znew
@@ -549,6 +549,182 @@ leyenda.append('exacta')
 legend(leyenda)
    
 
+### ejercicio 2e)
+
+def AM3_generico(a, b, fun, N, y0):
+    tol=1.e-12
+    nmax=200
+    y = zeros(N+1)
+    t = zeros(N+1)
+    f = zeros(N+1)
+    h = (b - a)/float(N) 
+    t[0] = a
+    y[0] = y0
+    f[0] = fun(a, y[0])
+    maxiter = 0
+    for k in range(2):#usamos rk4 pq el orden de am3 es 4
+        t[k+1] = t[k] + h
+        k1 = fun(t[k], y[k])
+        k2 = fun(t[k] + h/2, y[k] + h/2*k1)
+        k3 = fun(t[k] + h/2, y[k] + h/2*k2)
+        k4 = fun(t[k+1], y[k] + h*k3)
+        y[k+1] = y[k] + h/6*(k1 + 2*k2 + 2*k3 + k4)
+        f[k+1] = fun(t[k+1], y[k+1])
+    for k in range(2, N):
+        Ck = y[k] + h/24*(19*f[k] - 5*f[k-1] + f[k-2])#ojo con tk, el p fijo se aplica a lo ostro q tiene el yk+1
+        t[k+1] = t[k] + h
+        dist = tol + 1#para q entre
+        count = 0
+        z = y[k] + h/12*(23*f[k] - 16*f[k-1] + 5*f[k-2])
+        while(dist >tol and count < nmax):
+            znew = 9/24*h*fun(t[k+1], z) + Ck 
+            dist = abs(z - znew)
+            count += 1
+            z = znew
+
+        if count == nmax:
+            print('El método de punto fijo no ha convergido')
+        maxiter = max(maxiter, count)
+        y[k+1] = z
+        f[k+1] = fun(t[k+1], y[k+1])
+    return (t, y, maxiter)
+
+
+y0 = 0.0
+a = 0.0
+b = 5.0
+malla=[10,20,40,80,160]
+
+figure()
+
+for N in malla:
+    tini = perf_counter()
+
+    (t, y, maxiter) = AM3_generico(a, b, fun, N, y0)
+    
+    
+    tfin = perf_counter()
+    plot(t, y, "-*")
+    
+    h=(b-a)/float(N)
+    
+    ye = exacta(t)
+
+    
+    # Calculo del error cometido
+    error = max(abs(y-ye))
+    tcpu=tfin-tini 
+    
+    print('N = '+str(N))
+    print('Error='+str(error))
+    print('Tiempo CPU='+str(tcpu))
+    print('Máximo número de iteraciones de punto fijo: ' + str(maxiter))
+
+    
+    
+    if N > malla[0]:
+        order=(log(errorold)-log(error))/log(2)
+        print('orden aprox ' +str(order))
+    print('---------------------')
+    errorold=error
+    
+
+plot(t,ye)
+leyenda=['N = '+str(N) for N in malla]
+leyenda.append('exacta')
+legend(leyenda)
+   
+
+
+
+def AM3_Newton(a, b, fun, N, y0):
+    tol=1.e-12
+    nmax=200
+    y = zeros(N+1)
+    t = zeros(N+1)
+    f = zeros(N+1)
+    h = (b - a)/float(N) 
+    t[0] = a
+    y[0] = y0
+    f[0] = fun(a, y[0])
+    maxiter = 0
+    for k in range(2):#usamos rk4 pq el orden de am3 es 4
+        t[k+1] = t[k] + h
+        k1 = fun(t[k], y[k])
+        k2 = fun(t[k] + h/2, y[k] + h/2*k1)
+        k3 = fun(t[k] + h/2, y[k] + h/2*k2)
+        k4 = fun(t[k+1], y[k] + h*k3)
+        y[k+1] = y[k] + h/6*(k1 + 2*k2 + 2*k3 + k4)
+        f[k+1] = fun(t[k+1], y[k+1])
+    for k in range(2, N):
+        t[k+1] = t[k] + h
+        Ck = y[k] + h/24*(19*f[k] - 5*f[k-1] + f[k-2])#ojo con tk, siempre ponerlo primero mejor
+        dist = tol + 1
+        count = 0
+        z = y[k] + h/12*(23*f[k] - 16*f[k-1] + 5*f[k-2])
+        while(dist >tol and count < nmax):
+            F = z - 9*h/24*fun(t[k+1], z) - Ck # al escribir 9*24/h y 9*h/24 pueden obtenerse resultados ligeramente distintos
+            dF = 1 - 9*h/24*dyfun(t[k+1], z)
+            znew = z - F/dF
+            dist = abs(z - znew)
+            count += 1
+            z = znew
+
+        if count == nmax:
+            print('El método de punto fijo no ha convergido')
+        maxiter = max(maxiter, count)
+        y[k+1] = z
+        f[k+1] = fun(t[k+1], y[k+1])
+    return (t, y, maxiter)
+
+
+def dyfun(t, y): # derivada parcial de f(t,y) = -y + e^{-t}cos(t) con respecto a y
+    return -1
+
+y0 = 0.0
+a = 0.0
+b = 5.0
+malla=[10,20,40,80,160]
+
+figure()
+
+for N in malla:
+    tini = perf_counter()
+
+    (t, y, maxiter) = AM3_Newton(a, b, fun, N, y0)
+    
+    
+    tfin = perf_counter()
+    plot(t, y, "-*")
+    
+    h=(b-a)/float(N)
+    
+    ye = exacta(t)
+
+    
+    # Calculo del error cometido
+    error = max(abs(y-ye))
+    tcpu=tfin-tini 
+    
+    print('N = '+str(N))
+    print('Error='+str(error))
+    print('Tiempo CPU='+str(tcpu))
+    print('Máximo número de iteraciones de punto fijo: ' + str(maxiter))
+
+    
+    
+    if N > malla[0]:
+        order=(log(errorold)-log(error))/log(2)
+        print('orden aprox ' +str(order))
+    print('---------------------')
+    errorold=error
+    
+
+plot(t,ye)
+leyenda=['N = '+str(N) for N in malla]
+leyenda.append('exacta')
+legend(leyenda)
+
 
 #####EJERCICIO 3###################################
 def ABM3(a, b, fun, N, y0):
@@ -696,7 +872,7 @@ for i in range(k):
     print('Tiempo CPU: ' + str(tfin-tini))
    
 
-legend(['N = ' + str(N) for N in malla])
+leyenda=(['N = ' + str(N) for N in malla])
 subplot(121)
 legend(leyenda)
 subplot(122)
