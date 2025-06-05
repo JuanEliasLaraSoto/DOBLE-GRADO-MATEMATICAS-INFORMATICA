@@ -89,12 +89,12 @@ print('Problema 2: EN LIBRETA TIENES EL CALCULO DE LOS AUTOVALORES')
 print('-------------')
 
 figure('Problema 2. Region de estabilidad')
-locfronRK(dREuler,1)
-plot([-10,-10],[1,-1],'*')
-plot([-10,0],[1,0],'k--')
-plot([-10,0],[-1,0],'k--')
+locfronRK(dREuler,1)#dibujo la region estabilidad d euler
+plot([-10,-10],[1,-1],'*')#dos aut
+plot([-10,0],[1,0],'k--')#los aut los uno alorigen
+plot([-10,0],[-1,0],'k--')#los aut los uno al origen
 hcrit=20/101
-plot([-10*hcrit,-10*hcrit],[hcrit,-hcrit],'bo')
+plot([-10*hcrit,-10*hcrit],[hcrit,-hcrit],'bo')#marco la hcritic h*lamda1 y h*lamda2
 
 
 
