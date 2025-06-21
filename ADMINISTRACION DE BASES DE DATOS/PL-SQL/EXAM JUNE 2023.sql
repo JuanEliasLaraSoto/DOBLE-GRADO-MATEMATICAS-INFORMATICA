@@ -142,16 +142,13 @@ END;
 
 
 --EJERCICIO 6
+-- ESPECIFICACIÓN DEL PAQUETE
 CREATE OR REPLACE PACKAGE pk_examen23 IS
    FUNCTION fecha_materia(p_codigo VARCHAR2) RETURN DATE;
+   PROCEDURE reparte(p_sede VARCHAR2, p_materia VARCHAR2);
 END pk_examen23;
 /
-
-CREATE OR REPLACE PACKAGE pk_examen23 IS
-   FUNCTION fecha_materia(p_codigo VARCHAR2) RETURN DATE;
-END pk_examen23;
-/
-
+-- CUERPO DEL PAQUETE
 CREATE OR REPLACE PACKAGE BODY pk_examen23 IS
 
    FUNCTION fecha_materia(p_codigo VARCHAR2) RETURN DATE IS
@@ -167,6 +164,67 @@ CREATE OR REPLACE PACKAGE BODY pk_examen23 IS
       WHEN NO_DATA_FOUND THEN
          RETURN SYSDATE;
    END fecha_materia;
+
+   PROCEDURE reparte(p_sede VARCHAR2, p_materia VARCHAR2) IS
+      CURSOR c_centros IS
+         SELECT nombre FROM centro WHERE sede = p_sede;
+
+      CURSOR c_estudiantes(v_centro_nombre VARCHAR2) IS
+         SELECT e.dni
+         FROM estudiante e
+         JOIN matricula m ON e.dni = m.dni
+         WHERE e.centro = v_centro_nombre
+           AND m.materia = p_materia;
+
+      v_codigo_aula  VARCHAR2(20);
+      v_fecha        DATE;
+      v_capacidad    NUMBER;
+      v_ocupacion    NUMBER;
+
+   BEGIN
+      v_fecha := fecha_materia(p_materia);  -- función del ejercicio 6
+
+      FOR c IN c_centros LOOP
+         BEGIN
+            -- Obtener el código del aula a partir del nombre del centro
+            v_codigo_aula := SUBSTR(c.nombre, 8, 8);
+
+            -- Comprobar existencia del aula y obtener su capacidad
+            SELECT capacidad_examen INTO v_capacidad
+            FROM aula
+            WHERE sede = p_sede AND codigo = v_codigo_aula;
+
+            -- Consultar ocupación actual del aula
+            SELECT COUNT(*) INTO v_ocupacion
+            FROM asistencia
+            WHERE sede = p_sede AND aula = v_codigo_aula;
+
+            -- Si hay aforo disponible
+            IF v_ocupacion < v_capacidad THEN
+               FOR est IN c_estudiantes(c.nombre) LOOP
+                  BEGIN
+                     insertar_asistencia(
+                        p_sede,
+                        p_materia,
+                        v_codigo_aula,
+                        v_fecha,
+                        est.dni
+                     );
+                  EXCEPTION
+                     WHEN OTHERS THEN
+                        RAISE SIMEX32CE47.PK_EXCEPCIONES.reparto_incorrecto;
+                  END;
+               END LOOP;
+            END IF;
+
+         EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+               RAISE SIMEX32CE47.PK_EXCEPCIONES.reparto_incorrecto;
+            WHEN OTHERS THEN
+               RAISE SIMEX32CE47.PK_EXCEPCIONES.reparto_incorrecto;
+         END;
+      END LOOP;
+   END reparte;
 
 END pk_examen23;
 /
