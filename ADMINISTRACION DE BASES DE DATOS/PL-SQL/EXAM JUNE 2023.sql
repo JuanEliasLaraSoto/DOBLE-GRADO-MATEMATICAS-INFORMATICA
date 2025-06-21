@@ -165,6 +165,7 @@ CREATE OR REPLACE PACKAGE BODY pk_examen23 IS
          RETURN SYSDATE;
    END fecha_materia;
 
+--EJERCICIO 7
    PROCEDURE reparte(p_sede VARCHAR2, p_materia VARCHAR2) IS
       CURSOR c_centros IS
          SELECT nombre FROM centro WHERE sede = p_sede;
