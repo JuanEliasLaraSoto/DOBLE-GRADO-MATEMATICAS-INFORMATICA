@@ -59,8 +59,8 @@ if v_cant<0 then raise_application_error(-20500,
 else 
 for c in 1..v_cant loop
 insert into descatalogados (isbn,fecha) values (:old.isbn, sysdate);
-commit;
 end loop;
+commit;
 end if;
 
 
@@ -82,10 +82,10 @@ cursor cur is select numero,isbn from prestamos where fin is null and inicio <a_
 begin
 for  c in cur loop
 update prestamos set fin=sysdate where c.numero=numero and c.isbn=isbn;
-commit;
 update libros set cantidad=cantidad-1 where c.isbn=isbn;
-commit;
+
 end loop;
+commit;
 end ;
 /
 
