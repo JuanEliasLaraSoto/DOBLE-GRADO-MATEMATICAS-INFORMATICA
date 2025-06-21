@@ -146,30 +146,12 @@ CREATE OR REPLACE PACKAGE pk_examen23 IS
    FUNCTION fecha_materia(p_codigo VARCHAR2) RETURN DATE;
 END pk_examen23;
 /
-ChatGPT Plus
-Aquí tenéis la solución completa al Ejercicio 6, tal como exige el enunciado:
 
-✅ Objetivo:
-Crear un paquete llamado PK_EXAMEN23.
-
-Declarar dentro de él una función fecha_materia(p_codigo).
-
-La función busca la fecha de la materia en la tabla MATERIA.
-
-Si no la encuentra, devuelve SYSDATE.
-
-📦 Cabecera del paquete (PACKAGE)
-sql
-Copiar
-Editar
 CREATE OR REPLACE PACKAGE pk_examen23 IS
    FUNCTION fecha_materia(p_codigo VARCHAR2) RETURN DATE;
 END pk_examen23;
 /
-📦 Cuerpo del paquete (PACKAGE BODY)
-sql
-Copiar
-Editar
+
 CREATE OR REPLACE PACKAGE BODY pk_examen23 IS
 
    FUNCTION fecha_materia(p_codigo VARCHAR2) RETURN DATE IS
