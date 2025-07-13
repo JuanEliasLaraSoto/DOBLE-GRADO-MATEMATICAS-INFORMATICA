@@ -1,0 +1,125 @@
+--JUAN ELIAS LARA SOTO 
+--ADMINISTRACION DE BASE DE DATOS
+--EXAMEN DE JUNIO 2017
+
+-- Crear tabla USUARIOS
+CREATE TABLE USUARIOS (
+  ID              NUMBER PRIMARY KEY,
+  NOMBRE          VARCHAR2(50) NOT NULL,
+  APELLIDOS       VARCHAR2(50) NOT NULL,
+  USUARIO_ORACLE  VARCHAR2(12)
+);
+
+-- Crear tabla PREGUNTAS
+CREATE TABLE PREGUNTAS (
+  ID         NUMBER PRIMARY KEY,
+  ENUNCIADO  VARCHAR2(100) NOT NULL
+);
+
+-- Crear tabla RESPUESTAS
+CREATE TABLE RESPUESTAS (
+  ID            NUMBER PRIMARY KEY,
+  ID_PREGUNTA   NUMBER REFERENCES PREGUNTAS(ID),
+  ID_USUARIO    NUMBER REFERENCES USUARIOS(ID),
+  RESPUESTA     VARCHAR2(100),
+  CONSTRAINT UK_PREGUNTA_USUARIO UNIQUE (ID_PREGUNTA, ID_USUARIO)
+);
+
+-- Crear vista V_RESPUESTAS: muestra todas las preguntas y, si han sido contestadas por el usuario actual, también la respuesta
+CREATE OR REPLACE VIEW V_RESPUESTAS (ID_PREGUNTA, ENUNCIADO, RESPUESTA) AS
+  SELECT 
+    P.ID, 
+    P.ENUNCIADO, 
+    NULL AS RESPUESTA
+  FROM 
+    PREGUNTAS P
+  WHERE 
+    P.ID NOT IN (
+      SELECT R.ID_PREGUNTA
+      FROM RESPUESTAS R 
+      JOIN USUARIOS U ON U.ID = R.ID_USUARIO
+      WHERE USER = U.USUARIO_ORACLE
+    )
+  UNION
+  SELECT 
+    P.ID, 
+    P.ENUNCIADO, 
+    R.RESPUESTA
+  FROM 
+    PREGUNTAS P
+  JOIN RESPUESTAS R ON R.ID_PREGUNTA = P.ID
+  JOIN USUARIOS U ON U.ID = R.ID_USUARIO
+  WHERE USER = U.USUARIO_ORACLE;
+
+
+create sequence sec_respuestas start with 1 increment by 1;
+
+
+CREATE OR REPLACE TRIGGER TR_RESPUESTAS
+INSTEAD OF UPDATE ON V_RESPUESTAS
+FOR EACH ROW
+DECLARE
+  v_id_usuario USUARIOS.ID%TYPE;
+  v_existe     NUMBER;
+BEGIN
+  -- Buscar el ID del usuario según USER
+  SELECT ID INTO v_id_usuario
+  FROM USUARIOS
+  WHERE USUARIO_ORACLE = USER;
+
+  -- Comprobar si ya respondió esa pregunta
+  SELECT COUNT(*) INTO v_existe
+  FROM RESPUESTAS
+  WHERE ID_USUARIO = v_id_usuario AND ID_PREGUNTA = :OLD.ID_PREGUNTA;
+
+  IF v_existe = 0 THEN
+    -- Si no respondió, insertar
+    INSERT INTO RESPUESTAS (ID, ID_PREGUNTA, ID_USUARIO, RESPUESTA)
+    VALUES (SEC_RESPUESTAS.NEXTVAL, :OLD.ID_PREGUNTA, v_id_usuario, :NEW.RESPUESTA);
+  ELSE
+    -- Si ya respondió, modificar la respuesta
+    UPDATE RESPUESTAS
+    SET RESPUESTA = :NEW.RESPUESTA
+    WHERE ID_USUARIO = v_id_usuario AND ID_PREGUNTA = :OLD.ID_PREGUNTA;
+  END IF;
+
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    RAISE_APPLICATION_ERROR(-20001, 'Usuario no existe en USUARIOS.');
+  WHEN OTHERS THEN
+    RAISE_APPLICATION_ERROR(-20050, 'Error inesperado: ' || SQLERRM);
+END;
+/
+
+
+-- Tabla para registrar errores al crear vistas
+CREATE TABLE ERRORES (
+  USUARIO     VARCHAR2(50),
+  DESCRIPCION VARCHAR2(100)
+);
+
+-- Procedimiento que crea una vista por usuario
+CREATE OR REPLACE PROCEDURE PR_CREA_VISTAS_RESPUESTAS IS
+  CURSOR c_usuarios IS
+    SELECT ID, USUARIO_ORACLE FROM USUARIOS;
+
+  v_sql        VARCHAR2(1000);
+  v_nombre_vista VARCHAR2(50);
+BEGIN
+  FOR u IN c_usuarios LOOP
+    v_nombre_vista := 'V_' || u.USUARIO_ORACLE || '_RESPUESTA';
+    v_sql := 'CREATE OR REPLACE VIEW ' || v_nombre_vista || ' AS ' ||
+             'SELECT p.id, p.enunciado, r.respuesta ' ||
+             'FROM preguntas p LEFT OUTER JOIN respuestas r ' ||
+             'ON r.id_pregunta = p.id WHERE r.id_usuario = ' || u.ID;
+
+    BEGIN
+      EXECUTE IMMEDIATE v_sql;
+    EXCEPTION
+      WHEN OTHERS THEN
+        INSERT INTO ERRORES (USUARIO, DESCRIPCION)
+        VALUES (u.USUARIO_ORACLE, SQLERRM);
+    END;
+  END LOOP;
+END;
+/
