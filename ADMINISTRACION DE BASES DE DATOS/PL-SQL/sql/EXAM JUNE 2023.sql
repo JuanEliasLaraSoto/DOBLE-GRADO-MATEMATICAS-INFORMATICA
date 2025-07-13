@@ -105,8 +105,8 @@ delete from aulas where sede=p_sede;
 else 
 delete from aulas where sede=p_sede;
 delete from asistencia where sede=p_sede;
-commit;
 end if;
+commit;
 end;
 /
 
