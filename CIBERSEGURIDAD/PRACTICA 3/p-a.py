@@ -1,3 +1,4 @@
+
 from Crypto.Hash import SHA256, HMAC
 import base64
 import json
@@ -5,90 +6,93 @@ import sys
 from socket_class import SOCKET_SIMPLE_TCP
 import funciones_aes
 from Crypto.Random import get_random_bytes
+
 # Paso 0: Inicializacion
 ########################
-# Lee clave KBT
 KAT = open("KAT.bin", "rb").read()
-# Paso 3) A->T: KAT(Alice, Na) en AES-GCM
-#########################################
-# Crear el socket de conexion con T (5551)
-print("Creando conexion con T...")
-socket = SOCKET_SIMPLE_TCP('127.0.0.1', 5551)
-socket.conectar()
+# (A realizar por el alumno/a...)
+socket_T = SOCKET_SIMPLE_TCP('127.0.0.1', 5551)
+socket_T.conectar()
+
 # Crea los campos del mensaje
 t_n_origen = get_random_bytes(16)
-# Codifica el contenido (los campos binarios en una cadena) y contruyoel mensaje JSON
+# Paso 3) A->T: KAT(Alice, Na) en AES-GCM
+#########################################
 msg_TE = []
-msg_TE.append("Alice")
-msg_TE.append(t_n_origen.hex())
+msg_TE.append("ALICE")
+msg_TE.append(t_n_origen)
 json_ET = json.dumps(msg_TE)
-print("A -> T (descifrado): " + json_ET)
+
 # Cifra los datos con AES GCM
 aes_engine = funciones_aes.iniciarAES_GCM(KAT)
-cifrado, cifrado_mac, cifrado_nonce =funciones_aes.cifrarAES_GCM(aes_engine,json_ET.encode("utf-8"))
+cifrado, cifrado_mac, cifrado_nonce = funciones_aes.cifrarAES_GCM(aes_engine,json_ET.encode("utf-8"))
 # Envia los datos
-socket.enviar(cifrado)
-socket.enviar(cifrado_mac)
-socket.enviar(cifrado_nonce)
+socket_T.enviar(cifrado)
+socket_T.enviar(cifrado_mac)#MAC POR LA CARA(eSTOY USANDO GCM)
+socket_T.enviar(cifrado_nonce)#NONCE POR LA CARA
+
+# (A realizar por el alumno/a...)
 
 # Paso 4) T->A: KAT(K1, K2, Na) en AES-GCM
 ##########################################
-cifradoA = socket.recibir()
-cifrado_macA = socket.recibir()
-cifrado_nonceA = socket.recibir()
-datos_claro = funciones_aes.descifrarAES_GCM(KAT, cifrado_nonceA,
-cifradoA,cifrado_macA)
+cif=socket_T.recibir()
+nonce=socket_T.recibir()
+mac=socket_T.recibir()
+# Descifro los datos con AES GCM
+datos_descifrado_ET = funciones_aes.descifrarAES_GCM(KAT, cifrado_nonce, cifrado, cifrado_mac)
 # Decodifica el contenido: Bob, Nb
-json_AT = datos_claro.decode("utf-8" ,"ignore")
-print("A -> T (descifrado): " + json_AT)
-msg_AT = json.loads(json_AT)
+json_ET = datos_descifrado_ET.decode("utf-8" ,"ignore")
+print("B->T (descifrado): " + json_ET)
+msg_ET = json.loads(json_ET)
 # Extraigo el contenido
-K1, K2, t_nb = msg_AT
+K1,K2, t_nb = msg_ET
+t_nb = bytearray.fromhex(t_nb)
 K1 = bytearray.fromhex(K1)
 K2 = bytearray.fromhex(K2)
-t_nb = bytearray.fromhex(t_nb)
 if(t_nb == t_n_origen):
     print("El nonce es el mismo")
 else:
     print("El nonce no es el mismo")
-exit
-# Cerramos el socket entre A y T, no lo utilizaremos mas
-socket.cerrar()
+    exit
+# (A realizar por el alumno/a...)
+socket_T.cerrar()
 # Paso 5) A->B: KAB(Nombre) en AES-CTR con HMAC
 ###############################################
-#TTP actuará como servidor de las conexiones de A y B, mientras que B actuará
-#como servidor de las conexiones de A.
-print("Creando conexion con Bob...")
-socket = SOCKET_SIMPLE_TCP('127.0.0.1', 5553)
-socket.conectar()
-# Enviar el Nombre
-nombre = "Juan"
+socket_B = SOCKET_SIMPLE_TCP('127.0.0.1', 5551)
+socket_B.conectar()
+apellido = "JUANA"
 aes_cifrado, nonce_16_ini = funciones_aes.iniciarAES_CTR_cifrado(K1)
-
 datos_cifrado = funciones_aes.cifrarAES_CTR(aes_cifrado,
-nombre.encode("utf-8"))
-# Crear el HMAC
-hsend = HMAC.new(K2, msg=nombre.encode("utf-8"), digestmod=SHA256)
+apellido.encode("utf-8"))
+# Crear el hmac
+hsend = HMAC.new(K2, msg=apellido.encode("utf-8"), digestmod=SHA256)
 mac = hsend.digest()
 mensaje = []
 mensaje.append(datos_cifrado.hex())
 mensaje.append(nonce_16_ini.hex())
 mensaje.append(mac.hex())
-json_paquete = json.dumps(mensaje)
-socket.enviar(json_paquete.encode("utf-8"))
+
+# Envia los datos
+mensaje_json=json.dumps(mensaje)
+socket_B.enviar(mensaje_json.encode("utf-8"))
+
+
+# (A realizar por el alumno/a...)
+
 # Paso 6) B->A: KAB(Apellido) en AES-CTR con HMAC
 #################################################
-# Recibir el apellido
-paquete = socket.recibir()
-# Decodificar el contenido:
-json_BT = paquete.decode("utf-8" ,"ignore")
-print("A -> B (descifrado): " + json_BT)
-msg_BT = json.loads(json_BT)
+paquete=socket_B.recibir()##solo espero un paquete pq hay hmac y todo viene en el mismo paq
+
+# Descifro los datos con AES CTR
+# Decodifica el contenido: Bob, Nb
+json_ET = paquete.decode("utf-8" ,"ignore")
+print("T->B (descifrado): " + json_ET)
+msg_ET = json.loads(json_ET)
 # Extraigo el contenido
-datos_cifrado, nonce, mac = msg_BT
-datos_cifrado = bytearray.fromhex(datos_cifrado)
-nonce = bytearray.fromhex(nonce)
-# Se descifro
+datos_cifrado,nonce,mac = msg_ET##ES EL MAC VERDADERO EH, AQUI NO ENVIO MAC PORLACAA PQ ES CTR Q NO LLEVA MAC
+datos_cifrado=bytearray.fromhex(datos_cifrado)
+nonce=bytearray.fromhex(nonce)
+#####EL MAC NO LO PASO A HEXARRAY PQ LUEGO LE APLICO LA FUNC HEXVEIFY, SI LO PASO A HEXARRAY, ENTONCES TENDRIA Q USAR LUEGO LA FUNCION VERIFY Y NO LA HEXVERIFY
 aes_descifrado = funciones_aes.iniciarAES_CTR_descifrado(K1, nonce)
 datos_claro = funciones_aes.descifrarAES_CTR(aes_descifrado,
 datos_cifrado)
@@ -98,27 +102,30 @@ hmacB = HMAC.new(K2, digestmod=SHA256)
 hmacB.update(mensaje_claro_json.encode("utf-8"))
 try:
     hmacB.hexverify(mac)
-    print("Mensaje correcto")   
+    print("Mensaje correcto")
 except ValueError:
     print("Mensaje manipulado")
-socket.cerrar()
-exit()
+    socket_B.cerrar()
+    exit()
+# (A realizar por el alumno/a...)
+
 # Paso 7) A->B: KAB(END) en AES-CTR con HMAC
 ############################################
-# Envio el comando END
-end = "END"
+apellido = "END"
 aes_cifrado, nonce_16_ini = funciones_aes.iniciarAES_CTR_cifrado(K1)
 datos_cifrado = funciones_aes.cifrarAES_CTR(aes_cifrado,
-end.encode("utf-8"))
+apellido.encode("utf-8"))
 # Crear el hmac
-hsend = HMAC.new(K2, msg=end.encode("utf-8"), digestmod=SHA256)
-mac2 = hsend.digest()
+hsend = HMAC.new(K2, msg=apellido.encode("utf-8"), digestmod=SHA256)
+mac = hsend.digest()
 mensaje = []
 mensaje.append(datos_cifrado.hex())
 mensaje.append(nonce_16_ini.hex())
-mensaje.append(mac2.hex())
-json_paquete = json.dumps(mensaje)
+mensaje.append(mac.hex())
 
-socket.enviar(json_paquete.encode("utf-8"))
-socket.cerrar()
+# Envia los datos
+mensaje_json=json.dumps(mensaje)
+socket_B.enviar(mensaje_json)
+
+socket_T.cerrar()
 # (A realizar por el alumno/a...)

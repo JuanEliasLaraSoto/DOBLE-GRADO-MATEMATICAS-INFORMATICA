@@ -47,21 +47,28 @@ msg_ET = json.loads(json_ET)
 
 # Extraigo el contenido
 t_bob, t_nb = msg_ET
-t_nb = bytearray.fromhex(t_nb)#cd meto en json algo q no es un string, necesito hacerle un .hex
+t_nb = bytearray.fromhex(t_nb)
 
 # Paso 2) T->B: KBT(K1, K2, Nb) en AES-GCM
 ##########################################
-mensaje_B1 = [K1.hex(), K2.hex(), t_nb.hex()]
-json_EB = json.dumps(mensaje_B1)
 
-print(" T -> B (descifrado): " + json_EB)
 
-motorB_AES = funciones_aes.iniciarAES_GCM(KBT)
-cifrado_B1_T, mac_B1_T, nonce_B1_T = funciones_aes.cifrarAES_GCM(motorB_AES, json_EB.encode("utf-8"))
+# Codifica el contenido (los campos binarios en una cadena) y contruyo el mensaje JSON
+msg_TE = []
+msg_TE.append(K1.hex())
+msg_TE.append(K2.hex())
+msg_TE.append(t_nb.hex())
+json_ET = json.dumps(msg_TE)
 
-socket_Bob.enviar(cifrado_B1_T)
-socket_Bob.enviar(mac_B1_T)
-socket_Bob.enviar(nonce_B1_T)
+
+# Cifra los datos con AES GCM
+aes_engine = funciones_aes.iniciarAES_GCM(KBT)
+cifrado, cifrado_mac, cifrado_nonce = funciones_aes.cifrarAES_GCM(aes_engine,json_ET.encode("utf-8"))
+
+# Envia los datos
+socket_Bob.enviar(cifrado)
+socket_Bob.enviar(cifrado_mac)
+socket_Bob.enviar(cifrado_nonce)
 # (A realizar por el alumno/a...)
 
 # Cerramos el socket entre B y T, no lo utilizaremos mas
@@ -69,10 +76,14 @@ socket_Bob.cerrar()
 
 # Paso 3) A->T: KAT(Alice, Na) en AES-GCM
 #########################################
-print("Esperando a ALICE...")
+
+
+
+# (A realizar por el alumno/a...)
+#creamos socket de escucha a alice
+print("Esperando a Alice...")
 socket_Alice = SOCKET_SIMPLE_TCP('127.0.0.1', 5551)
 socket_Alice.escuchar()
-
 
 
 # Recibe el mensaje
@@ -89,26 +100,32 @@ print("A->T (descifrado): " + json_ET)
 msg_ET = json.loads(json_ET)
 
 # Extraigo el contenido
-t_A, t_na = msg_ET
-t_na = bytearray.fromhex(t_na)#cd meto en json algo q no es un string, necesito hacerle un .hex
-
-# (A realizar por el alumno/a...)
+t_a, t_na = msg_ET
+t_na = bytearray.fromhex(t_na)
 
 # Paso 4) T->A: KAT(K1, K2, Na) en AES-GCM
 ##########################################
-mensaje_B1 = [K1.hex(), K2.hex(), t_na.hex()]
-json_EB = json.dumps(mensaje_B1)
 
-print(" T -> B (descifrado): " + json_EB)
+# Codifica el contenido (los campos binarios en una cadena) y contruyo el mensaje JSON
+msg_TE = []
+msg_TE.append(K1.hex())
+msg_TE.append(K2.hex())
+msg_TE.append(t_na.hex())
+json_ET = json.dumps(msg_TE)
 
-motorB_AES = funciones_aes.iniciarAES_GCM(KBT)
-cifrado_B1_T, mac_B1_T, nonce_B1_T = funciones_aes.cifrarAES_GCM(motorB_AES, json_EB.encode("utf-8"))
 
-socket_Alice.enviar(cifrado_B1_T)
-socket_Alice.enviar(mac_B1_T)
-socket_Alice.enviar(nonce_B1_T)
+# Cifra los datos con AES GCM
+aes_engine = funciones_aes.iniciarAES_GCM(KBT)
+cifrado, cifrado_mac, cifrado_nonce = funciones_aes.cifrarAES_GCM(aes_engine,json_ET.encode("utf-8"))
+
+# Envia los datos
+socket_Alice.enviar(cifrado)
+socket_Alice.enviar(cifrado_mac)
+socket_Alice.enviar(cifrado_nonce)
 # (A realizar por el alumno/a...)
 
 # Cerramos el socket entre B y T, no lo utilizaremos mas
 socket_Alice.cerrar() 
+
 # (A realizar por el alumno/a...)
+
