@@ -1,0 +1,390 @@
+  t0_0[0]=2;
+        t0_0[1]=3;
+        t0_0[2]=4;
+        t0_0_length=3;
+        t2=0;
+        L2:
+        if (t2 < t0_0_length) goto L0;
+        goto L1;
+        L0:
+        t3=t0_0[t2];
+        c_0[t2]=t3;
+        t2=t2+1;
+        goto L2;
+        L1:
+        c_0_length=t0_0_length;
+        t1_0[0]=1;
+        t1_0[1]=2;
+        t1_0[2]=3;
+        t1_0_length=3;
+        t8=0;
+        t4=0;
+        L5:
+        if (t4 < t1_0_length) goto L3;
+        goto L4;
+        L3:
+        t5=t1_0[t4];
+        t8=c_0_length-t8;
+        t6=t4+t8;
+        t8=0;
+        t7=0;
+        L8:
+        if (t7 < c_0_length) goto L9;
+        goto L10;
+        L9:
+        if (c_0[t7] == t5) goto L6;
+        goto L7;
+        L6:
+        t4=t4+1;
+        t8=t8+1;
+        goto L5;
+        L7:
+        t7=t7+1;
+        goto L8;
+        L10:
+        c_0[t6]=t5;
+        t4=t4+1;
+        goto L5;
+        L4:
+        c_0_length=t1_0_length+c_0_length;
+        t10=c_0_length;
+        t9=0;
+        L13:
+        if (t9 < c_0_length) goto L14;
+        goto L15;
+        L14:
+        if (c_0[t9] == t10) goto L11;
+        goto L12;
+        L11:
+        goto L16;
+        L12:
+        t9=t9+1;
+        goto L13;
+        L15:
+        c_0[t10]=4;
+        c_0_length=c_0_length+1;
+        L16:
+        t12=c_0_length;
+        t11=0;
+        L19:
+        if (t11 < c_0_length) goto L20;
+        goto L21;
+        L20:
+        if (c_0[t11] == t12) goto L17;
+        goto L18;
+        L17:
+        goto L22;
+        L18:
+        t11=t11+1;
+        goto L19;
+        L21:
+        c_0[t12]=5;
+        c_0_length=c_0_length+1;
+        L22:
+        t13=0;
+        L25:
+        if (t13 < c_0_length) goto L23;
+        goto L24;
+        L23:
+        t14=c_0[t13];
+        print t14;
+        t13=t13+1;
+        goto L25;
+        L24:
+
+C:\CUP\src\2022BOK>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
