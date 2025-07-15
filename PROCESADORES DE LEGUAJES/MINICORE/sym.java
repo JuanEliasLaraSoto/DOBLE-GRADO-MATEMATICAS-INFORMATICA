@@ -6,107 +6,81 @@
 /** CUP generated class containing symbol constants. */
 public class sym {
   /* terminals */
-  public static final int CAST = 44;
-  public static final int ESTRING = 48;
-  public static final int MASMAS = 42;
-  public static final int DOSPUNTOS = 19;
-  public static final int INTERROGACION = 18;
-  public static final int MENOSMENOS = 43;
-  public static final int AC = 22;
-  public static final int CHAR = 45;
-  public static final int POR = 14;
-  public static final int GE = 8;
-  public static final int INTEGER = 34;
-  public static final int FOR = 40;
-  public static final int CP = 21;
-  public static final int NOT = 9;
-  public static final int AND = 10;
-  public static final int LT = 5;
-  public static final int CARACTER = 47;
-  public static final int OR = 11;
-  public static final int DIV = 15;
-  public static final int CC = 23;
-  public static final int IF = 36;
-  public static final int LE = 6;
+  public static final int AC = 35;
+  public static final int GE = 28;
+  public static final int RES = 9;
+  public static final int INTEGER = 7;
+  public static final int FOR = 21;
+  public static final int NUMI = 2;
+  public static final int CP = 34;
+  public static final int AND = 30;
+  public static final int NUMF = 3;
+  public static final int LT = 25;
+  public static final int OR = 31;
+  public static final int DIV = 11;
+  public static final int CC = 36;
+  public static final int IF = 17;
+  public static final int ID = 5;
+  public static final int LE = 26;
   public static final int EOF = 0;
-  public static final int ASIG = 2;
+  public static final int ASIG = 13;
   public static final int error = 1;
-  public static final int COMA = 26;
-  public static final int CADENA = 49;
-  public static final int NUMERO_REAL = 29;
-  public static final int MENOS = 13;
-  public static final int IDENT = 31;
-  public static final int EQ = 3;
-  public static final int MENOSUNARIO = 16;
-  public static final int CLL = 25;
-  public static final int NEG = 35;
-  public static final int ELSE = 37;
-  public static final int PORCENT = 17;
-  public static final int PUNTO = 28;
-  public static final int VARIABLE = 32;
-  public static final int WHILE = 39;
-  public static final int FLOAT = 33;
-  public static final int NE = 4;
-  public static final int ALL = 24;
-  public static final int AP = 20;
-  public static final int GT = 7;
-  public static final int NUMERO_ENTERO = 30;
-  public static final int LENGTH = 46;
-  public static final int PRINT = 41;
-  public static final int DO = 38;
-  public static final int PYC = 27;
-  public static final int MAS = 12;
+  public static final int MUL = 10;
+  public static final int COMA = 16;
+  public static final int EQ = 23;
+  public static final int MENOSUNARIO = 12;
+  public static final int CLL = 15;
+  public static final int NEG = 32;
+  public static final int NO = 29;
+  public static final int ELSE = 18;
+  public static final int WHILE = 20;
+  public static final int FLOAT = 6;
+  public static final int NE = 24;
+  public static final int SUM = 8;
+  public static final int ALL = 14;
+  public static final int AP = 33;
+  public static final int GT = 27;
+  public static final int PRINT = 22;
+  public static final int DO = 19;
+  public static final int PYC = 4;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
-  "ASIG",
-  "EQ",
-  "NE",
-  "LT",
-  "LE",
-  "GT",
-  "GE",
-  "NOT",
-  "AND",
-  "OR",
-  "MAS",
-  "MENOS",
-  "POR",
+  "NUMI",
+  "NUMF",
+  "PYC",
+  "ID",
+  "FLOAT",
+  "INTEGER",
+  "SUM",
+  "RES",
+  "MUL",
   "DIV",
   "MENOSUNARIO",
-  "PORCENT",
-  "INTERROGACION",
-  "DOSPUNTOS",
-  "AP",
-  "CP",
-  "AC",
-  "CC",
+  "ASIG",
   "ALL",
   "CLL",
   "COMA",
-  "PYC",
-  "PUNTO",
-  "NUMERO_REAL",
-  "NUMERO_ENTERO",
-  "IDENT",
-  "VARIABLE",
-  "FLOAT",
-  "INTEGER",
-  "NEG",
   "IF",
   "ELSE",
   "DO",
   "WHILE",
   "FOR",
   "PRINT",
-  "MASMAS",
-  "MENOSMENOS",
-  "CAST",
-  "CHAR",
-  "LENGTH",
-  "CARACTER",
-  "ESTRING",
-  "CADENA"
+  "EQ",
+  "NE",
+  "LT",
+  "LE",
+  "GT",
+  "GE",
+  "NO",
+  "AND",
+  "OR",
+  "NEG",
+  "AP",
+  "CP",
+  "AC",
+  "CC"
   };
 }
 

@@ -1,0 +1,329 @@
+import java_cup.runtime.*;
+
+parser code {:
+TablaSimbolos ts=new TablaSimbolos();
+
+Gc generador = new Gc();
+private int var = 0;
+private int etq = 0;
+    
+    // Generadores de referencias
+    /**
+     * Genera una variable con la estructura '$vX', siendo X un número.
+     */
+    private String nuevaTemp() {
+        return "$t" + (var++);
+    }
+     /**
+     * Genera una etiqueta con la estructura 'EX', siendo X un número.
+     */
+    private String crearEtiqueta() {
+        return "Label " + (etq++);
+    }
+    public void error(String msg){
+        System.err.println(msg);
+        System.exit(1);
+    }
+ 
+:}
+terminal Integer NUMI;
+terminal Float NUMF;
+terminal    PYC;                                    // Fin de línea
+terminal String ID;
+terminal String FLOAT,INTEGER;
+terminal SUM,RES,MUL,DIV,MENOSUNARIO;
+terminal ASIG;
+terminal ALL,CLL,COMA;
+terminal    IF, ELSE, DO, WHILE, FOR, PRINT;        // Funciones del lenguaje
+terminal    EQ, NE, LT, LE, GT, GE, NO, AND, OR;    // Operadores lógicos
+terminal     NEG;         // Operadores matemáticos
+terminal    AP, CP, AC, CC;                 // Aperturas y cierres
+
+/* NO-TERMINALES */
+non terminal    sents, sent,lista;            // Sentencias genéricas
+non terminal Tipo sent_decl,tipo;
+non terminal sentAsig,sentPrint,sentFor,sentIF;
+non terminal Tipo listaId;
+non terminal Tupla exp;
+non terminal Tupla aux;
+non terminal String aux2;
+non terminal DosEtq cond;
+non terminal String iff;
+
+precedence nonassoc IF,ELSE,PRINT;
+precedence  right ASIG;
+precedence left SUM,RES;
+precedence left MUL,DIV;
+precedence left EQ,LE,GE;
+precedence left NE,LT,GT;
+precedence left AND,OR,NO;
+precedence nonassoc MENOSUNARIO;
+precedence nonassoc ALL,CLL,AP,CP;
+
+
+/* PRECEDENCIAS */
+
+lista::=sents {:generador.imprimirInstrucciones();:};
+sents::= sents sent 
+        |sent 
+        ;
+sent::= sent_decl
+        |sentAsig
+        |sentFor
+        |sentPrint
+        |sentIF
+        |ALL sents CLL
+        |
+        ;
+
+sent_decl::=  listaId PYC;
+
+listaId::= listaId:t COMA aux2:id {:
+        if(ts.get(id)==null){
+        ts.put(id,t); RESULT=t;
+        }else{
+            error("VARIABLE YA DECLARADA");
+        }
+        :}
+        |tipo:t aux2:id  {:
+        if(ts.get(id)==null){
+        ts.put(id,t); RESULT=t;
+        }else{
+            error("VARIABLE YA DECLARADA");
+        }
+        :}
+        
+        ;//meto el tipo aqui para pode guardar de q tipo es e ir subiendolo
+aux2::=ID:id {:RESULT=id;:}
+        |ID:id ASIG exp:e  {:
+        generador.generarAsignacion(id,e.codigo);
+        RESULT=id;
+        :};
+
+tipo::= INTEGER {:RESULT=Tipo.I;:}
+        |FLOAT {:RESULT=Tipo.F;:};
+
+sentAsig::=ID:id ASIG aux:e PYC{:
+        Tipo t=ts.get(id);
+        if(t!=null){
+            if(t==e.tipo){   
+                generador.generarAsignacion(id,e.codigo);
+                RESULT=new Tupla(id,t);
+
+            }else if(t==Tipo.F&&e.tipo==Tipo.I){
+                String temp=nuevaTemp();
+                generador.generarIntToFloat(temp,e.codigo);
+                generador.generarAsignacion(id,temp);
+                RESULT=new Tupla(id,Tipo.F);
+            }else{
+                error("TIPOS INCOMPATIBLES");
+            }
+        }
+        :};
+aux::= exp:e {:RESULT=e;:}
+        |ID:id ASIG exp:e {:
+    Tipo t=ts.get(id);
+        if(t!=null){
+            if(t==e.tipo){
+                generador.generarAsignacion(id,e.codigo);
+                RESULT=new Tupla(id,t);
+            }else if(t==Tipo.F&&e.tipo==Tipo.I){
+                String temp=nuevaTemp();
+                generador.generarIntToFloat(temp,e.codigo);
+                generador.generarAsignacion(id,temp);
+                RESULT=new Tupla(id,Tipo.F);
+            }else{
+                error("TIPOS INCOMPATIBLES");
+            }}
+    :};
+exp::=exp:e1 SUM exp:e2 {:
+    Tipo t;
+    String temp=nuevaTemp();
+    if(e1.tipo==Tipo.I&&e2.tipo==Tipo.I){
+        t=Tipo.I;
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"+"); 
+        RESULT=new Tupla(temp,Tipo.I);
+    }else if(e1.tipo==Tipo.I&&e2.tipo==Tipo.F){
+        generador.generarIntToFloat(temp,e1.codigo);
+        temp=nuevaTemp();
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"+");
+        RESULT=new Tupla(temp,Tipo.F);
+    }else if(e1.tipo==Tipo.F&&e2.tipo==Tipo.I){
+        generador.generarIntToFloat(temp,e2.codigo);
+        temp=nuevaTemp();
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"+");
+        RESULT=new Tupla(temp,Tipo.F);
+    }
+
+    :}
+    |exp:e1 RES exp:e2 {:
+    Tipo t;
+    String temp=nuevaTemp();
+    if(e1.tipo==Tipo.I&&e2.tipo==Tipo.I){
+        t=Tipo.I;
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"-"); 
+        RESULT=new Tupla(temp,Tipo.I);
+    }else if(e1.tipo==Tipo.I&&e2.tipo==Tipo.F){
+        generador.generarIntToFloat(temp,e1.codigo);
+        temp=nuevaTemp();
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"-");
+        RESULT=new Tupla(temp,Tipo.F);
+    }else if(e1.tipo==Tipo.F&&e2.tipo==Tipo.I){
+        generador.generarIntToFloat(temp,e2.codigo);
+        temp=nuevaTemp();
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"-");
+        RESULT=new Tupla(temp,Tipo.F);
+    }
+
+    :}
+    |exp:e1 MUL exp:e2 {:
+    Tipo t;
+    String temp=nuevaTemp();
+    if(e1.tipo==Tipo.I&&e2.tipo==Tipo.I){
+        t=Tipo.I;
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"*"); 
+        RESULT=new Tupla(temp,Tipo.I);
+    }else if(e1.tipo==Tipo.I&&e2.tipo==Tipo.F){
+        generador.generarIntToFloat(temp,e1.codigo);
+        temp=nuevaTemp();
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"*");
+        RESULT=new Tupla(temp,Tipo.F);
+    }else if(e1.tipo==Tipo.F&&e2.tipo==Tipo.I){
+        generador.generarIntToFloat(temp,e2.codigo);
+        temp=nuevaTemp();
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"*");
+        RESULT=new Tupla(temp,Tipo.F);
+    }
+
+    :}
+    |exp:e1 DIV exp:e2  {:
+    Tipo t;
+    String temp=nuevaTemp();
+    if(e1.tipo==Tipo.I&&e2.tipo==Tipo.I){
+        t=Tipo.I;
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"/"); 
+        RESULT=new Tupla(temp,Tipo.I);
+    }else if(e1.tipo==Tipo.I&&e2.tipo==Tipo.F){
+        generador.generarIntToFloat(temp,e1.codigo);
+        temp=nuevaTemp();
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"/");
+        RESULT=new Tupla(temp,Tipo.F);
+    }else if(e1.tipo==Tipo.F&&e2.tipo==Tipo.I){
+        generador.generarIntToFloat(temp,e2.codigo);
+        temp=nuevaTemp();
+        generador.generarOperacion(temp,e1.codigo,e2.codigo,"/");
+        RESULT=new Tupla(temp,Tipo.F);
+    }
+
+    :}
+    |RES exp:e2  {:
+    
+    String temp=nuevaTemp();
+    
+        
+        generador.generarOperacion(temp,"",e2.codigo,"-"); 
+        RESULT=new Tupla(temp,Tipo.I);
+    
+
+    :}%prec MENOSUNARIO
+    |AP exp:e1 CP {:
+    
+ 
+       
+        RESULT=e1;
+ 
+    :}
+    |ID:i {:
+        Tipo t=ts.get(i);
+        if(t!=null){
+            RESULT=new Tupla(i,t);
+        }else{
+            error("VARIABLE NO DECLARADA");
+        }
+    :}
+    |NUMF:i {:RESULT=new Tupla(i,Tipo.F);:}
+    |NUMI:i {:RESULT=new Tupla(i,Tipo.I);:};
+sentPrint::= PRINT AP exp:e CP PYC {:  
+            
+            generador.generarPrint(e.codigo);:}
+            ;
+sentIF::=iff:temp AP cond:c CP {:
+        generador.generarEtiqueta(c.si);
+        :}sents:s {:generadorSalto(temp);generador.generarEtiqueta(c.no);:}parteELSE{:generador.generarEtiqueta(temp);:};
+iff::= IF {:RESULT=crearEtiqueta();:};
+parteELSE::=ELSE sent 
+            |
+            ;
+cond ::=exp:e1 EQ exp:e2{:
+        String si=crearEtiqueta();
+        String no=crearEtiqueta();
+        RESULT=new DosEtq(si,no);
+        generador.generarSaltoCondicional(e1.codigo,"==",e2.codigo,RESULT.si);
+        generador.generarSalto(RESULT.no);
+
+        :}
+        |exp:e1 LT exp:e2{:
+        String si=crearEtiqueta();
+        String no=crearEtiqueta();
+        RESULT=new DosEtq(si,no);
+
+        generador.generarSaltoCondicional(e1.codigo,"<",e2.codigo,RESULT.si);
+        generador.generarSalto(RESULT.no);
+
+        :}
+        |exp:e1 NE exp:e2{:
+        String si=crearEtiqueta();
+        String no=crearEtiqueta();
+        RESULT=new DosEtq(si,no);
+        generador.generarSaltoCondicional(e1.codigo,"!=",e2.codigo,RESULT.si);
+        generador.generarSalto(RESULT.no);
+
+        :}
+        |exp:e1 GT exp:e2{:
+        String si=crearEtiqueta();
+        String no=crearEtiqueta();
+        RESULT=new DosEtq(si,no);
+        generador.generarSaltoCondicional(e1.codigo,">",e2.codigo,RESULT.si);
+        generador.generarSalto(RESULT.no);
+
+        :}
+        |exp:e1 GE exp:e2{:
+        String si=crearEtiqueta();
+        String no=crearEtiqueta();
+        RESULT=new DosEtq(si,no);
+        generador.generarSaltoCondicional(e1.codigo,">=",e2.codigo,RESULT.si);
+        generador.generarSalto(RESULT.no);
+
+        :}
+        |exp:e1 LE exp:e2{:
+        String si=crearEtiqueta();
+        String no=crearEtiqueta();
+        RESULT=new DosEtq(si,no);
+        generador.generarSaltoCondicional(e1.codigo,"<=",e2.codigo,RESULT.si);
+        generador.generarSalto(RESULT.no);
+
+        :}
+        |NO cond:c{:
+        
+        RESULT=new DosEtq(c.no,c.si);
+        
+
+        :}
+        |cond:e1 AND cond:e2{:
+        String si=crearEtiqueta();
+        String no=crearEtiqueta();
+        RESULT=new DosEtq(si,no);
+        generador.generarSaltoCondicional(e1.codigo,"&&",e2.codigo,RESULT.si);
+        generador.generarSalto(RESULT.no);
+
+        :}
+        |cond:e1 || cond:e2{:
+        String si=crearEtiqueta();
+        String no=crearEtiqueta();
+        RESULT=new DosEtq(si,no);
+        generador.generarSaltoCondicional(e1.codigo,"||",e2.codigo,RESULT.si);
+        generador.generarSalto(RESULT.no);
+
+        :}
+        |AP cond:c CP {:RESULT=c;:}
+        ;
