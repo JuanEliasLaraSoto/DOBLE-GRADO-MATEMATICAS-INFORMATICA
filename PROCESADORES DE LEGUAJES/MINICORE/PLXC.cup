@@ -1,0 +1,289 @@
+import java_cup.runtime.*;
+import java.util.*;
+
+
+terminal ASIG;
+terminal    EQ, NE, LT, LE, GT, GE, NOT, AND, OR;    // Operadores lógicos
+terminal MAS,MENOS,POR,DIV,MENOSUNARIO,PORCENT;
+terminal String INTERROGACION;
+terminal DOSPUNTOS;
+terminal    AP, CP, AC, CC,ALL,CLL; 
+terminal COMA,PYC,PUNTO;
+terminal  String NUMERO_REAL,NUMERO_ENTERO;
+terminal String IDENT;
+terminal VARIABLE;
+terminal String FLOAT,INTEGER;  
+terminal     NEG;    
+terminal String IF,ELSE,DO,WHILE,FOR,PRINT;
+terminal MASMAS,MENOSMENOS;
+terminal CAST;
+terminal CHAR;
+terminal LENGTH;
+terminal Integer CARACTER;
+terminal String ESTRING;//string 
+terminal String CADENA;//"asi"
+
+
+//non terminal AST listaFunciones,funcion,sentCom;
+non terminal AST axioma;
+non terminal AST listaSent,sent;
+non terminal Expresion sentDecl,listaVar,var,initVar,cond;
+//non terminal AST sentReturn;
+non terminal AST sentDoWhile;
+non terminal AST sentFor;
+non terminal AST sentWhile;
+non terminal AST sentIf;
+//parteElse;
+//non terminal AST  sentAsig;
+//non terminal AST sentPrint;
+//non terminal Expresion expOp;
+non terminal AST exp;
+non terminal Tipo tipo;
+non terminal ArrayList<AST> listaArr;
+non terminal AST decArray,llavesArray;
+
+
+
+precedence right COMA,PYC,PUNTO;
+precedence nonassoc IDENT,NUMERO_REAL,NUMERO_ENTERO;
+precedence nonassoc INTEGER, FLOAT,CHAR;
+precedence right ASIG;
+
+precedence left AND,OR;
+precedence left LT, GT, LE, GE,NE,EQ;
+precedence left MAS,MENOS;
+precedence left POR,DIV,PORCENT;
+precedence right CAST;
+precedence right NOT;
+precedence left MENOSUNARIO;
+precedence nonassoc MASMAS,MENOSMENOS;
+
+precedence nonassoc IF;
+precedence nonassoc ELSE;
+precedence nonassoc AP,CP;
+precedence nonassoc AC,CC;
+precedence nonassoc ALL,CLL;
+
+
+/*
+precedence right ELVIS;
+precedence nonassoc BREAK;
+precedence left XOR;
+precedence right DIMP;
+procedence right IMP;
+precedence nonassoc CASE;
+*/
+axioma::=listaSent:s {:s.generarCTD();//TablaSimbolos.imprimir();
+                        :};
+listaSent::=listaSent:l sent:s
+    {:
+    RESULT=new AST(l,s);
+    :}
+    |sent:s {:RESULT=new AST(null,s);:}
+
+    ;
+sent::=exp:s PYC {:RESULT=s;:}
+        |PRINT AP exp:s CP PYC {:RESULT=new Print(s);:}
+        |PRINT AP llavesArray:e CP PYC       {: RESULT = new Print(e); :}
+        |sentIf:s {:RESULT=s;:}
+        |sentWhile:s  {:RESULT=s;:}
+        |ALL{:TablaSimbolos.abrirBloque();:} listaSent:s CLL {:RESULT=s;TablaSimbolos.cerrarBloque();:}
+        |sentFor:s {:RESULT=s;:}
+        |sentDoWhile:s PYC {:RESULT=s;:}
+        ;
+exp::= listaVar:l 
+        {:
+        RESULT=l;
+        :}
+        |decArray:s {:RESULT=s;:}
+        |IDENT:id ASIG exp:e {:RESULT=new Asig(TablaSimbolos.crearConBloqueSinNiv(id),e);:}
+        |IDENT:id AC exp:e1 CC ASIG exp:e2 {:
+        RESULT=new ArrayUnidimELEM(TablaSimbolos.crearConBloqueSinNiv(id),e1,e2);
+        //se le asigna un valor a esa posivion y se almacena      
+          :}        
+        |IDENT:id ASIG llavesArray:l {:/* x = {a,b,c...} */  
+        RESULT=new AsigArr(TablaSimbolos.crearConBloqueSinNiv(id),l);
+        :}
+       
+        |IDENT:id {:RESULT=new Variable(TablaSimbolos.getTipoSinNiv(id),TablaSimbolos.crearConBloqueSinNiv(id));:}
+        |NUMERO_ENTERO:v  {:RESULT=new Variable(new Tipo(Tipo.INT),v);:}
+        |NUMERO_REAL:v  {:RESULT=new Variable(new Tipo(Tipo.FLOAT),v);:}
+        |CARACTER:v {:RESULT=new Variable(new Tipo(Tipo.CHAR),v.toString());/*es un numero esun ascii, c es 65 en caso de q sea 'A' por ej, le hago to string para sea "65", los manejo como numeros*/:}
+        |CADENA:v {:RESULT=new Variable(new Tipo(Tipo.STRING),v);:}
+        |IDENT:id AC exp:pos CC {:
+        RESULT=new ArrayUnidimELEM(TablaSimbolos.crearConBloqueSinNiv(id),pos,null);
+        :}
+        |exp:e1 MAS exp:e2 {:
+        RESULT=new Suma(e1,e2);
+        :}
+        |exp:e1 MENOS exp:e2 {:
+        RESULT=new Resta(e1,e2);
+        :}
+        |exp:e1 POR exp:e2 {:
+        RESULT=new Por(e1,e2);
+        :}
+        |exp:e1 DIV exp:e2 {:
+        RESULT=new Divid(e1,e2);
+        :}
+	|exp:e1 PORCENT exp:e2 {:
+        AST aux1=new Divid(e1,e2);
+        AST aux2=new Por(aux1,e2);
+        RESULT=new Resta(e1,aux2);
+        :}
+        |MENOS exp:e {:
+        RESULT=new MenosUnario(e);:}%prec MENOSUNARIO
+        |AP exp:e CP {:RESULT=e;:}
+        |exp:e MASMAS {:
+        if(e instanceof Variable ){
+                        RESULT=new NUMMASMAS(((Expresion)e).getPalabra());
+        }else{
+                Generador.error("error en el masmas");
+        }
+        :}
+        |exp:e MENOSMENOS {:
+        if(e instanceof Variable ){
+                        RESULT=new NUMMENOSMENOS(((Expresion)e).getPalabra());
+        }else{
+                Generador.error("error en el menosmenos");
+        }:}
+        |MASMAS  exp:e {:
+         if(e instanceof Variable ){
+                       RESULT=new MASMASNUM(((Expresion)e).getPalabra());
+        }else{
+                Generador.error("error en el masmas");
+        }
+        :}
+        |MENOSMENOS exp:e {:
+         if(e instanceof Variable ){
+        RESULT=new MENOSMENOSNUM(((Expresion)e).getPalabra());
+        }else{
+                Generador.error("error en el menosmenos");
+        }
+        :}
+        |cond:c INTERROGACION exp:e1 DOSPUNTOS exp:e2 {:AST aux=new AST(e1,e2);RESULT=new TERNARIO(c,aux);   :}
+        |AP tipo:t CP exp:e {:RESULT=new CAST(t,e);:}%prec CAST
+        |IDENT:i PUNTO LENGTH {:RESULT=new LENGTH(TablaSimbolos.crearConBloqueSinNiv(i));:}
+        ;
+listaVar::=listaVar:l COMA var:v
+        {:
+        if(v.getTipo()!=null&&v.getTipo().tipo().equals(Tipo.ARRAYUNIDIM)){
+           Tipo porcompletar= v.getTipo();
+           if(l.getTipo().tipo().equals(Tipo.ARRAYUNIDIM)){
+            String subt=l.getTipo().getSubtipo();
+            porcompletar.setSubtipo(subt);
+            TablaSimbolos.putSinNiv(v.getPalabra(),porcompletar);
+           }else{
+           porcompletar.setSubtipo(l.getTipo().tipo());
+            TablaSimbolos.putSinNiv(v.getPalabra(),porcompletar);
+           }
+        }else{
+            if(l.getTipo().tipo().equals(Tipo.ARRAYUNIDIM)){
+           String subt=l.getTipo().getSubtipo();
+       v.setTipo(new Tipo(subt));
+               TablaSimbolos.putSinNiv(v.getPalabra(),l.getTipo());
+            }else{
+                v.setTipo(l.getTipo());
+               TablaSimbolos.putSinNiv(v.getPalabra(),l.getTipo());
+            }
+       }
+        RESULT=new ListaSent(l,v);
+        :}
+        |tipo:t var:v {:
+        if(v.getTipo()!=null&&v.getTipo().tipo().equals(Tipo.ARRAYUNIDIM)){
+        Tipo porcompletar= v.getTipo();
+           porcompletar.setSubtipo(t.tipo());
+            TablaSimbolos.putSinNiv(v.getPalabra(),porcompletar);
+  
+        }else{
+       v.setTipo(t);
+       
+              TablaSimbolos.putSinNiv(v.getPalabra(),t);
+
+       }
+        RESULT=new ListaSent(null,v);
+        :};
+var::=IDENT:id {://la primera vez q se leen el int a, es la vez en no asignamos tipo pq no lo sabemos pq lo sabe el listavar, pero lista sent le asignara tipo
+        RESULT=new Variable(null,TablaSimbolos.declarandoConBloqueSinNiv(id));
+        
+        :}
+        |IDENT:id ASIG exp:e {:
+        RESULT=new Asig(TablaSimbolos.declarandoConBloqueSinNiv(id),e);
+        :}
+        ;
+decArray ::= tipo:t IDENT:i AC NUMERO_ENTERO:n CC                 {: int tam = Integer.parseInt(n); 
+                                                               Tipo tipo = new Tipo(Tipo.ARRAYUNIDIM,t.tipo(),tam);
+                                                               String nombre = TablaSimbolos.declarandoConBloqueSinNiv(i);
+                                                               TablaSimbolos.putConNiv(nombre,tipo);
+                                                               RESULT = new ArrayUnidim(nombre,tipo); 
+                                                           :}
+
+          |  tipo:subt IDENT:i AC NUMERO_ENTERO:n CC ASIG llavesArray:s      {:
+                                                                      Tipo tipo = new Tipo(Tipo.ARRAYUNIDIM,subt.tipo(),Integer.parseInt(n));
+                                                                      String nombre = TablaSimbolos.declarandoConBloqueSinNiv(i);
+                                                                      TablaSimbolos.putConNiv(nombre,tipo);
+                                                                      RESULT = new AsigArr(nombre,s);
+                                                                    :}
+          ; 
+
+llavesArray ::= ALL listaArr:l CLL                       {: RESULT = new LISTARRAY(l); :}    
+              ;
+listaArr::= listaArr:l COMA exp:e {:l.add(e);RESULT=l;:}
+            |exp:e {:ArrayList<AST> a=new ArrayList(); a.add(e);RESULT=a;:}
+            ;
+tipo::= INTEGER {:RESULT=new Tipo(Tipo.INT);:}
+    | FLOAT {:RESULT=new Tipo(Tipo.FLOAT);:}
+    |CHAR {:RESULT=new Tipo(Tipo.CHAR);:}
+    |ESTRING {:RESULT=new Tipo(Tipo.STRING);:}
+
+    ;
+
+cond::= exp:e1 EQ exp:e2 {:RESULT=new Condicion(e1,e2,"EQ");:}
+        |exp:e1 NE exp:e2 {:RESULT=new Condicion(e1,e2,"NE");:}
+        |exp:e1 LT exp:e2 {:RESULT=new Condicion(e1,e2,"LT");:}
+        |exp:e1 LE exp:e2 {:RESULT=new Condicion(e1,e2,"LE");:}
+        |exp:e1 GT exp:e2 {:RESULT=new Condicion(e1,e2,"GT");:}
+        |exp:e1 GE exp:e2 {:RESULT=new Condicion(e1,e2,"GE");:}
+        |cond:c1 AND cond:c2 {:RESULT=new AND(c1,c2);:}
+        |cond:c1 OR cond:c2 {:RESULT=new OR(c1,c2);:}
+        |NOT cond:c2 {:RESULT=new NOT(c2);:}
+        |AP cond:c CP {:RESULT=c;:}
+        ;
+
+sentIf::= IF AP cond:c CP sent:l  {:
+        AST aux1=new IF(c,l);
+        RESULT=new IFELSE(aux1,null);
+        :}%prec IF
+        |IF AP cond:c1 CP sent:l1 ELSE sent:e1  {:
+        AST aux=new IF(c1,l1);
+        RESULT=new IFELSE(aux,e1);
+        :}%prec ELSE
+        ;
+
+sentWhile::=WHILE AP cond:c CP  sent:s  {://los corechetes los pone el sent
+            RESULT=new WHILE(c,s);
+            :}
+            ;
+sentFor::=FOR AP exp:e1 PYC cond:c PYC exp:e2 CP sent:s {:
+        AST aux1=new AST(s,e2);
+        AST aux2=new WHILE(c,aux1);
+        RESULT=new AST(e1,aux2);
+        :}
+        |FOR AP  PYC cond:c PYC exp:e2 CP sent:s {:
+        AST aux1=new AST(s,e2);
+        AST aux2=new WHILE(c,aux1);
+        RESULT=aux2;
+        :}
+        |FOR AP exp:e1 PYC cond:c PYC  CP sent:s {:
+        
+        AST aux2=new WHILE(c,s);
+        RESULT=new AST(e1,aux2);
+        :}
+        |FOR AP  PYC cond:c PYC  CP sent:s {:
+        AST aux2=new WHILE(c,s);
+        RESULT=aux2;
+        :}
+        ;
+sentDoWhile::=DO sent:s WHILE AP cond:c CP  {://los corechetes los pone el sent
+            RESULT=new DOWHILE(c,s);
+            :}
+            ;
