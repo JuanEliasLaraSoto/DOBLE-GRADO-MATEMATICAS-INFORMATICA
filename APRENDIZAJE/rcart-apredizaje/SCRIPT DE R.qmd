@@ -1,0 +1,33 @@
+---
+title: "rcart"
+format: pdf
+editor: visual
+---
+```{r}
+a<- c(2.771244718, 1.728571309, 3.678319846, 3.961043357, 2.999208922, 7.497545867, 9.00220326, 7.444542326, 10.12493903, 6.642287351)
+b<- c(1.784783929, 1.169761413, 2.812811357, 2.61995032, 2.209014212, 3.162953546, 3.339047188, 0.476683375, 3.234550982, 3.319983761)
+c<- c(0,0,0,0,0,1,1,1,1,1)
+PARA EL LUNES HABER LLEGADO AL MINIMO RSS
+
+A<- data.frame(a,b,c)
+names(A)<- c("x1", "x2", "y")
+
+idx<-order(A$x1)
+idx
+A<-A[idx,]
+meanR1<-function(s,var){
+  
+}
+meaR1<-function(s,var){
+  return(mean(A[A[var]]<s,]$Y))
+}
+meaR2<-function(s,var){
+  return(mean(A[A[var]]>=s,]$Y))
+}
+
+meanR1(2,"x1")
+
+A[A["X1"]<2,]$Y
+
+```
+

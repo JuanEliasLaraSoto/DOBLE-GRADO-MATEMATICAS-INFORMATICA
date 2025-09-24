@@ -1,0 +1,292 @@
+# Laboratorio CART
+
+library(rpart)
+
+data <- data.frame("x1"=c(
+  2.771244718,
+  1.728571309,
+  3.678319846,
+  3.961043357,
+  2.999208922,
+  7.497545867,
+  9.00220326,
+  7.444542326,
+  10.12493903,
+  6.642287351,
+  12,
+  2.771244718
+),
+"x2"=c(
+  1.784783929,
+  1.169761413,
+  2.81281357,
+  2.61995032,
+  2.209014212,
+  3.162953546,
+  3.339047188,
+  0.476683375,
+  3.234550982,
+  3.319983761,
+  3.319983761,
+  1
+),
+"y"=c(
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  1,
+  1,
+  1,
+  1,
+  0,
+  1
+))
+
+
+# Apartado a) El primer objetivo de la practica es teniendo en cuenta el algoritmo anterior realizar la primera
+# división del árbol y encontrar la variable y el valor de dicha división. El algoritmo mostrara la
+# variable y valor mínima.
+
+cat("Apartado a) \n")
+
+
+
+find_best_split <- function(data) {
+  
+  numColDatos <- 2
+  best_var <- NULL
+  best_val <- NULL
+  best_var_sum <- Inf
+  
+  for (col in 1:numColDatos){
+    xj <- colnames(data)[col]
+    for(fila in 1:nrow(data)){
+      
+      s<-data[fila, col]
+      R1<-data[data[xj]<s,]
+      R2<-data[data[xj]>=s,]
+      RSS <- sum((R1$y-mean(R1$y))^2)+sum((R2$y-mean(R2$y))^2)
+      
+      # Otra forma
+      # RSS <- calc_variance_split(data, xj, s)
+      # cat("Variable", var, "con valor", val, "la suma que minimiza es:", var_sum, "\n")
+      
+      if(RSS < best_var_sum){
+        best_var_sum <- RSS
+        best_var <- xj
+        best_val <- s
+      }
+    }
+  }
+  
+  return(list(mejorxj = best_var, mejorS = best_val, mejorRSS = best_var_sum))
+  
+}
+qq <- data[order(data$x1), ]
+
+
+best_split <- find_best_split(qq)
+cat("\nMejor división encontrada en la variable:", best_split$mejorxj, "con valor:", best_split$mejorS, "y suma mínima:", best_split$mejorRSS, "\n\n")
+
+
+# Laboratorio CART - versión todo en una función
+
+library(rpart)
+
+# Datos
+dataset <- data.frame(
+  x1 = c(
+    2.771244718, 1.728571309, 3.678319846, 3.961043357,
+    2.999208922, 7.497545867, 9.00220326, 7.444542326,
+    10.12493903, 6.642287351, 12, 2.771244718
+  ),
+  x2 = c(
+    1.784783929, 1.169761413, 2.81281357, 2.61995032,
+    2.209014212, 3.162953546, 3.339047188, 0.476683375,
+    3.234550982, 3.319983761, 3.319983761, 1
+  ),
+  y = c(
+    0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 0, 1
+  )
+)
+
+# Función principal
+busca_mejor_corte <- function(df, verbose = TRUE) {
+  mejor_var <- NA
+  mejor_val <- NA
+  mejor_error <- Inf
+  
+  predictores <- names(df)[names(df) != "y"]
+  
+  for (var in predictores) {
+    for (s in unique(df[[var]])) {
+      izq <- df[df[[var]] < s, ]
+      der <- df[df[[var]] >= s, ]
+      
+      if (nrow(izq) == 0 || nrow(der) == 0) next
+      
+      rss <- sum((izq$y - mean(izq$y))^2) +
+        sum((der$y - mean(der$y))^2)
+      
+      if (verbose) {
+        cat("Variable:", var,
+            "| Corte en:", s,
+            "| RSS:", round(rss, 3), "\n")
+      }
+      
+      if (rss < mejor_error) {
+        mejor_error <- rss
+        mejor_var <- var
+        mejor_val <- s
+      }
+    }
+  }
+  
+  cat("\n>>> Mejor división encontrada:",
+      mejor_var, "<", mejor_val,
+      "con RSS =", round(mejor_error, 3), "\n")
+  
+  return(list(variable = mejor_var,
+              corte = mejor_val,
+              error = mejor_error))
+}
+
+# Ejecutar
+resultado <- busca_mejor_corte(dataset[order(dataset$x1), ])
+
+# Apartado b)  El segundo objetivo del algoritmo es determinar dos árboles T1 y T2 de dos niveles tal que T1
+# explote la región derecha (es decir R2) con el algoritmo descrito anteriormente, mientra que T2
+# explota la izquierda. Por ultimo, predecimos el conjunto completo de resultados usando ambos
+# arboles. Nos quedaremos con el árbol que mejor predicción realice.
+
+cat("Apartado b) \n")
+
+calc_node_prediction <- function(data) {
+  t <- sum(data$y == 0)
+  r <- sum(data$y == 1)
+  return(c(t, r))
+}
+
+print_tree <- function(tree, level = 0, side = "Root") {
+  
+  cat("Nivel 0\n")
+  cat("\tNodo 1 (o raíz):", tree$split_var, "<", tree$split_value, "\n")
+  
+  cat("Nivel 1\n")
+  
+  format_prediction <- function(pred) {
+    return(paste0("(", pred[1], ", ", pred[2], ")"))
+  }
+  
+  cat("\tDerecha\n")
+  if (!tree$right$isLeaf) {
+    cat("\t\tNodo 2:", tree$right$split_var, "<", tree$right$split_value, "\n")
+    cat("\t\t\t", format_prediction(tree$right$left$prediction), "-", format_prediction(tree$right$right$prediction), "\n")
+  } else {
+    cat("\t\t", format_prediction(tree$right$prediction), "\n")
+  }
+  
+  cat("\tIzquierda\n")
+  if (!tree$left$isLeaf) {
+    cat("\t\tNodo 2:", tree$left$split_var, "<", tree$left$split_value, "\n")
+    cat("\t\t\t", format_prediction(tree$left$left$prediction), "-", format_prediction(tree$left$right$prediction), "\n")
+  } else {
+    cat("\t\t", format_prediction(tree$left$prediction), "\n")
+  }
+  
+  cat("\n")
+}
+
+# Función para predecir usando el árbol personalizado
+predict_custom_cart <- function(tree, newdata) {
+  predictions <- matrix(0, nrow = nrow(newdata), ncol = 2)
+  
+  for (i in 1:nrow(newdata)) {
+    node <- tree
+    while (!node$isLeaf) {
+      if (newdata[i, node$split_var] < node$split_value) {
+        node <- node$left
+      } else {
+        node <- node$right
+      }
+    }
+    predictions[i,] <- node$prediction
+  }
+  
+  return(predictions)
+}
+
+
+# Dividir el dataset en R1 (izquierda) y R2 (derecha) usando la mejor división dada en el apartado a)
+R1 <- data[data[best_split$mejorxj] < best_split$mejorS, ]
+R2 <- data[data[best_split$mejorxj] >= best_split$mejorS, ]
+
+
+# Función para entrenar un árbol CART personalizado
+train_custom_cart <- function(data, depth = 2) {
+  
+  if (depth == 0 || nrow(data) <= 1) {
+    return(list(prediction = calc_node_prediction(data), isLeaf = TRUE))
+  }
+  
+  split <- find_best_split(data)
+  
+  left_data <- data[data[[split$mejorxj]] < split$mejorS, ]
+  right_data <- data[data[[split$mejorxj]] >= split$mejorS, ]
+  
+  left_branch <- train_custom_cart(left_data, depth - 1)
+  right_branch <- train_custom_cart(right_data, depth - 1)
+  
+  return(list(
+    split_var = split$mejorxj,
+    split_value = split$mejorS,
+    left = left_branch,
+    right = right_branch,
+    isLeaf = FALSE,
+    prediction = calc_node_prediction(data)
+  ))
+}
+
+T1 <- list(
+  split_var = best_split$mejorxj,
+  split_value = best_split$mejorS,
+  left = list(prediction = calc_node_prediction(R1), isLeaf = TRUE),
+  right = train_custom_cart(R2, depth = 1),
+  isLeaf = FALSE
+)
+
+T2 <- list(
+  split_var = best_split$mejorxj,
+  split_value = best_split$mejorS,
+  left = train_custom_cart(R1, depth = 1),
+  right = list(prediction = calc_node_prediction(R2), isLeaf = TRUE),
+  isLeaf = FALSE
+)
+
+cat("\nArbol 1.\n")
+print_tree(T1)
+cat("\nArbol 2.\n")
+print_tree(T2)
+
+pred_T1 <- predict_custom_cart(T1, data)
+pred_T2 <- predict_custom_cart(T2, data)
+
+calc_accuracy <- function(true_labels, predictions) {
+  predicted_class <- ifelse(predictions[,2] > predictions[,1], 1, 0)
+  return(mean(true_labels == predicted_class))
+}
+
+accuracy_T1 <- calc_accuracy(data$y, pred_T1)
+accuracy_T2 <- calc_accuracy(data$y, pred_T2)
+
+cat("Predicción.\n")
+cat("\tT1:", accuracy_T1, "\n")
+cat("\tT2:", accuracy_T2, "\n")
+
+cat("Apartado c) \n")
+
+

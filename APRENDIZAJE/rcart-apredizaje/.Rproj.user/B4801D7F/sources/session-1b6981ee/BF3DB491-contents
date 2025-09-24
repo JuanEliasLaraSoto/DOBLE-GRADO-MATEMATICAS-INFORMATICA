@@ -1,0 +1,66 @@
+# Laboratorio CART - versión todo en una función
+
+library(rpart)
+
+# Datos
+dataset <- data.frame(
+  x1 = c(
+    2.771244718, 1.728571309, 3.678319846, 3.961043357,
+    2.999208922, 7.497545867, 9.00220326, 7.444542326,
+    10.12493903, 6.642287351, 12, 2.771244718
+  ),
+  x2 = c(
+    1.784783929, 1.169761413, 2.81281357, 2.61995032,
+    2.209014212, 3.162953546, 3.339047188, 0.476683375,
+    3.234550982, 3.319983761, 3.319983761, 1
+  ),
+  y = c(
+    0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 0, 1
+  )
+)
+
+# Función principal
+busca_mejor_corte <- function(df, verbose = TRUE) {
+  mejor_var <- NA
+  mejor_val <- NA
+  mejor_error <- Inf
+  
+  predictores <- names(df)[names(df) != "y"]
+  
+  for (var in predictores) {
+    for (s in unique(df[[var]])) {
+      izq <- df[df[[var]] < s, ]
+      der <- df[df[[var]] >= s, ]
+      
+      if (nrow(izq) == 0 || nrow(der) == 0) next
+      
+      rss <- sum((izq$y - mean(izq$y))^2) +
+        sum((der$y - mean(der$y))^2)
+      
+      if (verbose) {
+        cat("Variable:", var,
+            "| Corte en:", s,
+            "| RSS:", round(rss, 3), "\n")
+      }
+      
+      if (rss < mejor_error) {
+        mejor_error <- rss
+        mejor_var <- var
+        mejor_val <- s
+      }
+    }
+  }
+  
+  cat("\n>>> Mejor división encontrada:",
+      mejor_var, "<", mejor_val,
+      "con RSS =", round(mejor_error, 3), "\n")
+  
+  return(list(variable = mejor_var,
+              corte = mejor_val,
+              error = mejor_error))
+}
+
+# Ejecutar
+resultado <- busca_mejor_corte(dataset[order(dataset$x1), ])
+print(resultado)

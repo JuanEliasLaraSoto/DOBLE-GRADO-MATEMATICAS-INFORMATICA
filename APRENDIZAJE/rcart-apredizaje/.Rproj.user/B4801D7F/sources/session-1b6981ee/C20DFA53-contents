@@ -1,0 +1,93 @@
+# Laboratorio CART
+
+library(rpart)
+
+data <- data.frame("x1"=c(
+  2.771244718,
+  1.728571309,
+  3.678319846,
+  3.961043357,
+  2.999208922,
+  7.497545867,
+  9.00220326,
+  7.444542326,
+  10.12493903,
+  6.642287351,
+  12,
+  2.771244718
+),
+"x2"=c(
+  1.784783929,
+  1.169761413,
+  2.81281357,
+  2.61995032,
+  2.209014212,
+  3.162953546,
+  3.339047188,
+  0.476683375,
+  3.234550982,
+  3.319983761,
+  3.319983761,
+  1
+),
+"y"=c(
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  1,
+  1,
+  1,
+  1,
+  0,
+  1
+))
+
+
+# Apartado a) El primer objetivo de la practica es teniendo en cuenta el algoritmo anterior realizar la primera
+# división del árbol y encontrar la variable y el valor de dicha división. El algoritmo mostrara la
+# variable y valor mínima.
+
+cat("Apartado a) \n")
+
+
+
+find_best_split <- function(data) {
+  
+  numColDatos <- 2
+  best_var <- NULL
+  best_val <- NULL
+  best_var_sum <- Inf
+  
+  for (col in 1:numColDatos){
+    xj <- colnames(data)[col]
+    for(fila in 1:nrow(data)){
+      
+      s<-data[fila, col]
+      R1<-data[data[xj]<s,]
+      R2<-data[data[xj]>=s,]
+      RSS <- sum((R1$y-mean(R1$y))^2)+sum((R2$y-mean(R2$y))^2)
+      
+      # Otra forma
+      # RSS <- calc_variance_split(data, xj, s)
+      # cat("Variable", var, "con valor", val, "la suma que minimiza es:", var_sum, "\n")
+      
+      if(RSS < best_var_sum){
+        best_var_sum <- RSS
+        best_var <- xj
+        best_val <- s
+      }
+    }
+  }
+  
+  return(list(mejorxj = best_var, mejorS = best_val, mejorRSS = best_var_sum))
+  
+}
+qq <- data[order(data$x1), ]
+
+
+best_split <- find_best_split(qq)
+cat("\nMejor división encontrada en la variable:", best_split$mejorxj, "con valor:", best_split$mejorS, "y suma mínima:", best_split$mejorRSS, "\n\n")
+

@@ -1,0 +1,220 @@
+```{r}
+library(rpart)
+cat("APARTADO A) \n")
+# Datos
+dataset <- data.frame(
+  x1 = c(
+    2.771244718, 1.728571309, 3.678319846, 3.961043357,
+    2.999208922, 7.497545867, 9.00220326, 7.444542326,
+    10.12493903, 6.642287351, 12, 2.771244718
+  ),
+  x2 = c(
+    1.784783929, 1.169761413, 2.81281357, 2.61995032,
+    2.209014212, 3.162953546, 3.339047188, 0.476683375,
+    3.234550982, 3.319983761, 3.319983761, 1
+  ),
+  y = c(
+    0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 0, 1
+  )
+)
+
+# Función principal
+busca_mejor_corte <- function(df, verbose = TRUE) {
+  mejor_var <- NA
+  mejor_val <- NA
+  mejor_error <- Inf
+  
+  predictores <- names(df)[names(df) != "y"]
+  
+  for (var in predictores) {
+    for (s in unique(df[[var]])) {
+      izq <- df[df[[var]] < s, ]
+      der <- df[df[[var]] >= s, ]
+      
+      if (nrow(izq) == 0 || nrow(der) == 0) next
+      
+      rss <- sum((izq$y - mean(izq$y))^2) +
+             sum((der$y - mean(der$y))^2)
+      
+      if (verbose) {
+        cat("Variable:", var,
+            "| Corte en:", s,
+            "| RSS:", round(rss, 3), "\n")
+      }
+      
+      if (rss < mejor_error) {
+        mejor_error <- rss
+        mejor_var <- var
+        mejor_val <- s
+      }
+    }
+  }
+  if(verbose){
+  cat("\n>>> Mejor división encontrada:",
+      mejor_var, "<", mejor_val,
+      "con RSS =", round(mejor_error, 3), "\n")
+  }
+  return(list(variable = mejor_var,
+              corte = mejor_val,
+              error = mejor_error))
+}
+
+# Ejecutar
+resultado <- busca_mejor_corte(dataset[order(dataset$x1), ])
+
+
+cat("\n APARTADO B)\n")
+
+# Función para contar frecuencia de clases en un nodo
+contar_clases <- function(tabla) {
+  return(cero_uno = c(sum(tabla$y == 0), sum(tabla$y == 1)))
+}
+# Construcción de un sub-árbol limitado en profundidad
+crear_subarbol <- function(tabla, max_prof = 2) {
+  
+  # Condiciones de parada: sin profundidad o pocos datos
+  if (max_prof == 0 || nrow(tabla) < 2) {
+    return(list(
+      hoja = TRUE,
+      salida = contar_clases(tabla)
+    ))
+  }
+  
+  # Buscar mejor corte en el nodo actual
+  mejor <- busca_mejor_corte(tabla, verbose = FALSE)
+  
+  # Dividir datos según el corte
+  izquierda <- tabla[tabla[[mejor$variable]] < mejor$corte, ]
+  derecha   <- tabla[tabla[[mejor$variable]] >= mejor$corte, ]
+  
+  # Crear nodo interno con sus ramas
+  return(list(
+    hoja = FALSE,
+    var = mejor$variable,
+    punto = mejor$corte,
+    salida = contar_clases(tabla),
+    izq = crear_subarbol(izquierda, max_prof - 1),
+    der = crear_subarbol(derecha,   max_prof - 1)
+  ))
+}
+
+
+# Predicción de clases siguiendo el árbol
+usar_arbol <- function(modelo, datos) {
+  salida <- matrix(0, nrow = nrow(datos), ncol = 2)
+  
+  for (fila in 1:nrow(datos)) {
+    nodo <- modelo
+    while (!nodo$hoja) {
+      if (datos[fila, nodo$var] < nodo$punto) {
+        nodo <- nodo$izq
+      } else {
+        nodo <- nodo$der
+      }
+    }
+    salida[fila, ] <- nodo$salida
+  }
+  return(salida)
+}
+
+# Función para mostrar un árbol de 2 niveles
+dibujar_arbol <- function(arbol) {
+  cat("Nivel 0:\n")
+  cat("\tRaíz ->", arbol$var, "<", arbol$punto, "\n")
+  cat("Nivel 1:\n")
+  
+  print_lado <- function(rama, etiqueta) {
+    cat("\t", etiqueta, "\n")
+    if (rama$hoja) {
+      cat("\t\t(", rama$salida[1], ",", rama$salida[2], ")\n")
+    } else {
+      cat("\t\tNodo 2:", rama$var, "<", rama$punto, "\n")
+      cat("\t\t\t(", rama$izq$salida[1], ",", rama$izq$salida[2], ") -",
+          "(", rama$der$salida[1], ",", rama$der$salida[2], ")\n")
+    }
+  }
+  
+  print_lado(arbol$der, "Derecha")
+  print_lado(arbol$izq, "Izquierda")
+  cat("\n")
+}
+
+# División inicial usando resultado del apartado A
+mejor <- resultado
+parte_izq <- dataset[dataset[[mejor$variable]] < mejor$corte, ]
+parte_der <- dataset[dataset[[mejor$variable]] >= mejor$corte, ]
+
+# Árbol T1 -> expande la derecha
+T1 <- list(
+  hoja = FALSE,
+  var = mejor$variable,
+  punto = mejor$corte,
+  salida = contar_clases(dataset),
+  izq = list(hoja = TRUE, salida = contar_clases(parte_izq)),
+  der = crear_subarbol(parte_der, max_prof = 1)
+)
+
+# Árbol T2 -> expande la izquierda
+T2 <- list(
+  hoja = FALSE,
+  var = mejor$variable,
+  punto = mejor$corte,
+  salida = contar_clases(dataset),
+  izq = crear_subarbol(parte_izq, max_prof = 1),
+  der = list(hoja = TRUE, salida = contar_clases(parte_der))
+)
+
+# Mostrar estructura de cada árbol
+cat("\nÁrbol T1\n")
+dibujar_arbol(T1)
+
+cat("\nÁrbol T2\n")
+dibujar_arbol(T2)
+
+# Calcular precisión
+evaluar_precision <- function(etiquetas, pred) {
+  clase_estimada <- ifelse(pred[,2] > pred[,1], 1, 0)
+  return(mean(etiquetas == clase_estimada))
+}
+
+pred1 <- usar_arbol(T1, dataset)
+pred2 <- usar_arbol(T2, dataset)
+
+cat("Precisión de T1:", evaluar_precision(dataset$y, pred1), "\n")
+cat("Precisión de T2:", evaluar_precision(dataset$y, pred2), "\n")
+cat("APARTADO C) \n")
+cat("Un árbol de decisión puede crecer indefinidamente si seguimos dividiendo, pero eso provoca sobreajuste y reduce la capacidad de generalizar. 
+Por ello, es necesario fijar criterios de parada que indiquen cuándo detener el crecimiento del árbol.
+El criterios elegido es:
+Tamaño mínimo de nodo: no dividir si en el nodo hay menos de un número mínimo de observaciones (ej. 5).)
+Este criterio evita nodos con muy pocos datos, que suelen llevar a sobreajuste y reglas poco fiables")
+
+```
+
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
