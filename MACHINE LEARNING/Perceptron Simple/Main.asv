@@ -9,7 +9,7 @@ load DatosAND
 %load DatosOR
 %load DatosXOR
 
-LR=0.05;
+LR=2;
 Limites=[-1.5, 2.5, -1.5, 2.5];
 MaxEpoc=100;
 
