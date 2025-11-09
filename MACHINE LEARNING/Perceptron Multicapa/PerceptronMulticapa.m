@@ -28,7 +28,7 @@ clear all
 load('Clasificacion/D_Vertebral_Column.mat');Neu=[6 1];
 
 %% Configuración de la red
-Beta=0.001;
+Beta=1;
 eta=0.1;
 maxEpoch=2000;
 
