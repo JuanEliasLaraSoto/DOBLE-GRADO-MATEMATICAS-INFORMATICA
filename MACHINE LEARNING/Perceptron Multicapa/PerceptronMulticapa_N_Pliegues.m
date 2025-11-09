@@ -47,16 +47,22 @@ nSalidas=size(Z,2);%Numero de neuronas salidas
 t=rand(nOcultas,size(X,2)); %número de ocultas x tantos pesos como entradas X 
 w=rand(nSalidas,nOcultas); %número de salidas x tantos pesos como salidas de la capa oculta X 
 
-%% Distribución aleatoria de los datos en nPliegues pliegues: Entrenamiento(90%) y Validación(10%)
-nPliegues=10;
-cardPliegue=floor(size(X,1)/nPliegues);
-idxValidacion=zeros(cardPliegue,nPliegues);
-idxEntrenamiento=zeros(cardPliegue*(nPliegues-1),nPliegues);
-idxPermutacion=randperm(size(X,1));
-idxPermutacion=idxPermutacion(1:end-mod(size(X,1),nPliegues));%Eliminamos los últimos para que sea múltiplos exactos de nPliegues
-for i=1:nPliegues
-    idxValidacion(:,i)=idxPermutacion(:,(i-1)*cardPliegue+1:i*cardPliegue);
+%% Distribución aleatoria de los datos en nPliegues pliegues: Entrenamiento(90%) y Validación(10%)%% Crear índices de entrenamiento y validación para cada pliegue
+nPliegues = 10;
+N = size(X,1);
+cardPliegue = floor(N / nPliegues);
+
+idxPermutacion = randperm(N);
+idxPermutacion = idxPermutacion(1:cardPliegue*nPliegues); % truncar si sobra
+
+for i = 1:nPliegues
+    % Índices de validación del pliegue i
+    idxValidacion(:,i) = idxPermutacion((i-1)*cardPliegue + 1 : i*cardPliegue);
+    
+    % Entrenamiento = todos los demás
+    idxEntrenamiento(:,i) = setdiff(idxPermutacion, idxValidacion(:,i));
 end
+
 
 idxEntrenamiento(:,1)=idxPermutacion(:,cardPliegue+1:end);
 idxEntrenamiento(:,end)=idxPermutacion(:,1:(nPliegues-1)*cardPliegue);

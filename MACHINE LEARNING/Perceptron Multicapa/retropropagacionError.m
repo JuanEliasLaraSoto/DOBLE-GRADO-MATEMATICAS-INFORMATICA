@@ -13,7 +13,7 @@ err = (Z - y);
 g1d = derivadaLogistica(h, Beta);
 g2d = derivadaLogistica(u, Beta);
 
-initDerivative = eta .* err .* g1d;
+initDerivative =  eta .* err .* g1d;
 derivativeHL = (w' .* g2d);
 
 difW = initDerivative * s';

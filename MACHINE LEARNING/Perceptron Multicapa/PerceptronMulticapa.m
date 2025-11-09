@@ -28,9 +28,9 @@ clear all
 load('Clasificacion/D_Vertebral_Column.mat');Neu=[6 1];
 
 %% Configuración de la red
-Beta=1;
+Beta=0.001;
 eta=0.1;
-maxEpoch=3000;
+maxEpoch=2000;
 
 %% Inicialización de variables
 
@@ -113,3 +113,21 @@ plot(MSEAcumuladoTest_vector,'r') %r---> red
  % Encontrar el índice de parada en el cual el MSE de validación es mínimo
 [~, indiceParada] = min(MSEAcumuladoValid_vector);
 plot(indiceParada , MSEAcumuladoTest_vector(indiceParada), 'or')
+
+
+X = data(:,1:end-1);  % entradas
+Y = data(:,end);      % salida (objetivo continuo)
+
+figure;
+plot(Y, 'b', 'LineWidth', 1.2);
+grid on
+xlabel('Índice de patrón');
+ylabel('Valor objetivo (Y)');
+title('Clasificacion/D_Vertebral_Column.mat');
+minY = min(Y);
+maxY = max(Y);
+rango = maxY - minY;
+
+fprintf('Valor mínimo del objetivo: %.4f\n', minY);
+fprintf('Valor máximo del objetivo: %.4f\n', maxY);
+fprintf('Rango de la función a aprender: %.4f\n', rango);
